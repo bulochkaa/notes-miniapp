@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Заметки</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ──────────────────── CSS Variables ──────────────────── */
+  :root {
+    --bg:        var(--tg-theme-bg-color,        #0f0f13);
+    --bg2:       var(--tg-theme-secondary-bg-color, #1a1a22);
+    --text:      var(--tg-theme-text-color,       #f0f0f5);
+    --hint:      var(--tg-theme-hint-color,       #6b6b80);
+    --accent:    var(--tg-theme-button-color,     #6c63ff);
+    --accent-t:  var(--tg-theme-button-text-color,#ffffff);
+    --link:      var(--tg-theme-link-color,       #a89cff);
+    --radius:    16px;
+    --radius-sm: 10px;
+    --font:      'Onest', sans-serif;
+    --safe-b:    env(safe-area-inset-bottom, 0px);
+  }
+
+  /* ──────────────────── Reset ──────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+
+  /* ──────────────────── Layout ──────────────────── */
+  #app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    position: relative;
+  }
+
+  .screen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(24px);
+    transition: opacity .25s ease, transform .25s ease;
+    overflow: hidden;
+  }
+  .screen.active {
+    opacity: 1;
+    pointer-events: all;
+    transform: translateX(0);
+  }
+  .screen.slide-out {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+
+  /* ──────────────────── Scrollable area ──────────────────── */
+  .scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 12px 16px calc(80px + var(--safe-b));
+    scrollbar-width: none;
+  }
+  .scroll-area::-webkit-scrollbar { display: none; }
+
+  /* ──────────────────── Header ──────────────────── */
+  .header {
+    padding: 16px 16px 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+    z-index: 2;
+  }
+  .header-title {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -.4px;
+    flex: 1;
+  }
+  .header-sub {
+    font-size: 13px;
+    color: var(--hint);
+    margin-top: 1px;
+  }
+  .back-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: var(--bg2);
+    color: var(--text);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity .15s;
+    flex-shrink: 0;
+  }
+  .back-btn:active { opacity: .6; }
+
+  /* ──────────────────── Search bar ──────────────────── */
+  .search-wrap {
+    padding: 6px 16px 10px;
+    position: relative;
+  }
+  .search-input {
+    width: 100%;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    border: none;
+    background: var(--bg2);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 15px;
+    padding: 0 40px 0 38px;
+    outline: none;
+    transition: box-shadow .2s;
+  }
+  .search-input:focus { box-shadow: 0 0 0 2px var(--accent)44; }
+  .search-input::placeholder { color: var(--hint); }
+  .search-icon {
+    position: absolute;
+    left: 27px; top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+    pointer-events: none;
+  }
+  .search-clear {
+    position: absolute;
+    right: 26px; top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+    cursor: pointer;
+    color: var(--hint);
+    background: none;
+    border: none;
+    line-height: 1;
+    display: none;
+  }
+  .search-input:not(:placeholder-shown) ~ .search-clear { display: block; }
+
+  /* ──────────────────── Category grid ──────────────────── */
+  .category-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .cat-card {
+    background: var(--bg2);
+    border-radius: var(--radius);
+    padding: 18px 16px;
+    cursor: pointer;
+    transition: transform .15s, box-shadow .15s;
+    position: relative;
+    overflow: hidden;
+    border: 1.5px solid transparent;
+  }
+  .cat-card:active { transform: scale(.97); }
+  .cat-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--cat-color, var(--accent));
+    opacity: .08;
+    transition: opacity .2s;
+  }
+  .cat-card:active::before { opacity: .15; }
+
+  .cat-emoji {
+    font-size: 28px;
+    line-height: 1;
+    display: block;
+    margin-bottom: 10px;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,.3));
+  }
+  .cat-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    display: block;
+    margin-bottom: 4px;
+  }
+  .cat-count {
+    font-size: 12px;
+    color: var(--hint);
+    display: block;
+  }
+  .cat-dot {
+    position: absolute;
+    top: 12px; right: 12px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--cat-color, var(--accent));
+    opacity: .6;
+  }
+
+  /* ──────────────────── Stats section ──────────────────── */
+  .stats-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .stat-pill {
+    flex: 1;
+    background: var(--bg2);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    text-align: center;
+  }
+  .stat-pill .num {
+    font-size: 24px;
+    font-weight: 700;
+    display: block;
+    color: var(--accent);
+    letter-spacing: -.5px;
+  }
+  .stat-pill .lbl {
+    font-size: 11px;
+    color: var(--hint);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+
+  /* ──────────────────── Section label ──────────────────── */
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--hint);
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    margin: 20px 0 10px;
+  }
+
+  /* ──────────────────── Record list ──────────────────── */
+  .records-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .record-card {
+    background: var(--bg2);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: transform .15s;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    border: 1.5px solid transparent;
+    position: relative;
+    overflow: hidden;
+  }
+  .record-card:active { transform: scale(.98); }
+  .record-card.has-photo .record-thumb {
+    width: 60px; height: 60px;
+    border-radius: 10px;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: var(--bg);
+  }
+  .record-body { flex: 1; min-width: 0; }
+  .record-cat-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--hint);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin-bottom: 4px;
+  }
+  .record-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .record-desc {
+    font-size: 13px;
+    color: var(--hint);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.4;
+  }
+  .record-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .record-stars { font-size: 11px; letter-spacing: -1px; }
+  .record-tags {
+    font-size: 11px;
+    color: var(--link);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .record-date { font-size: 11px; color: var(--hint); margin-left: auto; }
+
+  /* ──────────────────── Record detail ──────────────────── */
+  .detail-photo {
+    width: 100%;
+    max-height: 220px;
+    object-fit: cover;
+    border-radius: var(--radius);
+    margin-bottom: 16px;
+    display: block;
+  }
+
+  .detail-title {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -.3px;
+    margin-bottom: 6px;
+  }
+
+  .detail-cat {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--accent)22;
+    color: var(--link);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    margin-bottom: 16px;
+  }
+
+  .detail-stars {
+    font-size: 20px;
+    letter-spacing: -2px;
+    margin-bottom: 16px;
+    display: block;
+  }
+
+  .detail-block {
+    background: var(--bg2);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+  .detail-block-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--hint);
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    margin-bottom: 6px;
+  }
+  .detail-block-text {
+    font-size: 15px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .detail-link {
+    color: var(--link);
+    text-decoration: none;
+    word-break: break-all;
+  }
+  .detail-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .tag-pill {
+    background: var(--accent)1a;
+    color: var(--link);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+  .detail-date {
+    font-size: 12px;
+    color: var(--hint);
+    text-align: center;
+    margin-top: 6px;
+    margin-bottom: 16px;
+  }
+  .detail-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .btn {
+    flex: 1;
+    height: 48px;
+    border-radius: var(--radius-sm);
+    border: none;
+    font-family: var(--font);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .15s, transform .1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .btn:active { opacity: .8; transform: scale(.98); }
+  .btn-primary { background: var(--accent); color: var(--accent-t); }
+  .btn-danger  { background: #ff4444; color: #fff; }
+  .btn-ghost   { background: var(--bg2); color: var(--text); }
+
+  /* ──────────────────── Add form ──────────────────── */
+  .form-group {
+    margin-bottom: 16px;
+  }
+  .form-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--hint);
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    display: block;
+    margin-bottom: 7px;
+  }
+  .form-input, .form-textarea, .form-select {
+    width: 100%;
+    background: var(--bg2);
+    border: 1.5px solid transparent;
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 15px;
+    padding: 12px 14px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .form-input:focus,
+  .form-textarea:focus,
+  .form-select:focus { border-color: var(--accent); }
+  .form-input::placeholder,
+  .form-textarea::placeholder { color: var(--hint); }
+  .form-textarea {
+    resize: none;
+    min-height: 100px;
+    line-height: 1.6;
+  }
+  .form-select option { background: #1a1a22; }
+
+  /* Star rating picker */
+  .star-picker {
+    display: flex;
+    gap: 6px;
+  }
+  .star-btn {
+    font-size: 28px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    line-height: 1;
+    filter: grayscale(1) opacity(.4);
+    transition: filter .15s, transform .1s;
+    padding: 2px;
+  }
+  .star-btn.active,
+  .star-btn:hover { filter: grayscale(0) opacity(1); }
+  .star-btn:active { transform: scale(.85); }
+
+  /* Category picker */
+  .cat-picker {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .cat-pick-btn {
+    background: var(--bg2);
+    border: 1.5px solid transparent;
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 11px 10px;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color .2s, background .15s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .cat-pick-btn.selected {
+    border-color: var(--accent);
+    background: var(--accent)1a;
+    color: var(--link);
+  }
+
+  /* ──────────────────── Bottom nav ──────────────────── */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0; right: 0;
+    height: calc(60px + var(--safe-b));
+    padding-bottom: var(--safe-b);
+    background: var(--bg2);
+    border-top: 1px solid rgba(255,255,255,.06);
+    display: flex;
+    align-items: stretch;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    background: none;
+    border: none;
+    color: var(--hint);
+    font-family: var(--font);
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    cursor: pointer;
+    transition: color .2s;
+    padding: 0;
+  }
+  .nav-btn.active { color: var(--accent); }
+  .nav-btn .nav-icon { font-size: 22px; line-height: 1; }
+
+  /* FAB */
+  .fab {
+    position: fixed;
+    right: 20px;
+    bottom: calc(76px + var(--safe-b));
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--accent-t);
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    box-shadow: 0 4px 20px var(--accent)66;
+    transition: transform .15s, box-shadow .15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 99;
+  }
+  .fab:active { transform: scale(.92); box-shadow: 0 2px 10px var(--accent)44; }
+
+  /* ──────────────────── Empty state ──────────────────── */
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+  }
+  .empty-icon { font-size: 52px; margin-bottom: 14px; }
+  .empty-title { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
+  .empty-sub { font-size: 14px; color: var(--hint); line-height: 1.5; }
+
+  /* ──────────────────── Toast ──────────────────── */
+  .toast {
+    position: fixed;
+    bottom: calc(76px + var(--safe-b) + 10px);
+    left: 50%; transform: translateX(-50%) translateY(0);
+    background: #2a2a35;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 10px 20px;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.4);
+    z-index: 200;
+    opacity: 0;
+    transition: opacity .25s;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; }
+
+  /* ──────────────────── Loading ──────────────────── */
+  .loader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 120px;
+    color: var(--hint);
+    gap: 8px;
+    font-size: 14px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner {
+    width: 20px; height: 20px;
+    border: 2px solid var(--hint);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+
+  /* ──────────────────── Confirm overlay ──────────────────── */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.6);
+    z-index: 300;
+    display: flex;
+    align-items: flex-end;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s;
+  }
+  .overlay.show { opacity: 1; pointer-events: all; }
+  .sheet {
+    width: 100%;
+    background: var(--bg2);
+    border-radius: var(--radius) var(--radius) 0 0;
+    padding: 20px 20px calc(20px + var(--safe-b));
+    transform: translateY(100%);
+    transition: transform .3s cubic-bezier(.32,.72,0,1);
+  }
+  .overlay.show .sheet { transform: translateY(0); }
+  .sheet-title {
+    font-size: 17px;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  .sheet-sub {
+    font-size: 14px;
+    color: var(--hint);
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  /* Animations */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .record-card, .cat-card {
+    animation: fadeUp .3s ease both;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ════════════ SCREEN: Home ════════════ -->
+  <div class="screen active" id="screen-home">
+    <div class="header">
+      <div>
+        <div class="header-title">📓 Заметки</div>
+        <div class="header-sub" id="home-sub">Загрузка…</div>
+      </div>
+    </div>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="search-input" placeholder="Поиск по заметкам…" autocomplete="off">
+      <button class="search-clear" id="search-clear">✕</button>
+    </div>
+    <div class="scroll-area">
+      <div id="stats-row" class="stats-row"></div>
+      <div class="section-label">Категории</div>
+      <div class="category-grid" id="cat-grid"></div>
+      <div class="section-label" id="recent-label">Последние</div>
+      <div class="records-list" id="recent-list"></div>
+    </div>
+  </div>
+
+  <!-- ════════════ SCREEN: Category ════════════ -->
+  <div class="screen" id="screen-cat">
+    <div class="header">
+      <button class="back-btn" onclick="showHome()">←</button>
+      <div>
+        <div class="header-title" id="cat-title">Категория</div>
+        <div class="header-sub" id="cat-sub"></div>
+      </div>
+    </div>
+    <div class="scroll-area">
+      <div class="records-list" id="cat-records"></div>
+    </div>
+  </div>
+
+  <!-- ════════════ SCREEN: Record detail ════════════ -->
+  <div class="screen" id="screen-detail">
+    <div class="header">
+      <button class="back-btn" id="detail-back">←</button>
+      <div class="header-title">Запись</div>
+    </div>
+    <div class="scroll-area" id="detail-content"></div>
+  </div>
+
+  <!-- ════════════ SCREEN: Add / Edit ════════════ -->
+  <div class="screen" id="screen-form">
+    <div class="header">
+      <button class="back-btn" id="form-back">←</button>
+      <div class="header-title" id="form-title">Новая заметка</div>
+    </div>
+    <div class="scroll-area">
+      <div class="form-group">
+        <label class="form-label">Категория</label>
+        <div class="cat-picker" id="form-cat-picker"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Название *</label>
+        <input class="form-input" id="form-title-in" placeholder="Например: Интерстеллар">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Описание *</label>
+        <textarea class="form-textarea" id="form-desc" rows="4" placeholder="Напиши пару слов об этой заметке…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Ссылка</label>
+        <input class="form-input" id="form-link" placeholder="https://…" type="url">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Оценка</label>
+        <div class="star-picker" id="form-stars">
+          <button class="star-btn" data-v="1">⭐</button>
+          <button class="star-btn" data-v="2">⭐</button>
+          <button class="star-btn" data-v="3">⭐</button>
+          <button class="star-btn" data-v="4">⭐</button>
+          <button class="star-btn" data-v="5">⭐</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Теги <span style="color:var(--hint);text-transform:none;letter-spacing:0;font-weight:400">(через запятую)</span></label>
+        <input class="form-input" id="form-tags" placeholder="нуар, 90е, мелодрама">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Напоминание</label>
+        <select class="form-select" id="form-reminder">
+          <option value="">Без напоминания</option>
+          <option value="1">Через 1 день</option>
+          <option value="3">Через 3 дня</option>
+          <option value="7">Через 7 дней</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" id="form-submit" style="width:100%;margin-top:4px">
+        Сохранить
+      </button>
+    </div>
+  </div>
+
+  <!-- ════════════ SCREEN: Stats ════════════ -->
+  <div class="screen" id="screen-stats">
+    <div class="header">
+      <div class="header-title">📊 Статистика</div>
+    </div>
+    <div class="scroll-area" id="stats-content"></div>
+  </div>
+
+  <!-- ════════════ Bottom nav ════════════ -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" id="nav-home" onclick="showHome()">
+      <span class="nav-icon">🏠</span> Главная
+    </button>
+    <button class="nav-btn" id="nav-add" onclick="showAdd()">
+      <span class="nav-icon">➕</span> Добавить
+    </button>
+    <button class="nav-btn" id="nav-stats" onclick="showStats()">
+      <span class="nav-icon">📊</span> Статистика
+    </button>
+  </nav>
+
+</div>
+
+<!-- Delete confirm overlay -->
+<div class="overlay" id="del-overlay">
+  <div class="sheet">
+    <div class="sheet-title">Удалить запись?</div>
+    <div class="sheet-sub" id="del-record-name">Это действие нельзя отменить.</div>
+    <button class="btn btn-danger" id="del-confirm-btn" style="width:100%;margin-bottom:10px">
+      🗑 Удалить
+    </button>
+    <button class="btn btn-ghost" onclick="closeOverlay()" style="width:100%">
+      Отмена
+    </button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ──────────────────── Telegram WebApp init ────────────────────
+const tg = window.Telegram?.WebApp;
+if (tg) {
+  tg.ready();
+  tg.expand();
+  tg.enableClosingConfirmation();
+}
+const initData = tg?.initData || '';
+
+// ──────────────────── API ────────────────────
+const API = '';   // same origin — backend serves this file
+
+async function api(method, path, body) {
+  const opts = {
+    method,
+    headers: { 'Content-Type': 'application/json', 'X-Init-Data': initData }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(API + path, opts);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+const GET    = (p)      => api('GET',    p);
+const POST   = (p, b)   => api('POST',   p, b);
+const PUT    = (p, b)   => api('PUT',    p, b);
+const DELETE = (p)      => api('DELETE', p);
+
+// ──────────────────── State ────────────────────
+let state = {
+  records:    [],
+  categories: [],
+  stats:      null,
+  currentCat: null,
+  editRecord: null,
+  screenStack: [],
+};
+
+// Category colors (CSS variable per card)
+const CAT_COLORS = {
+  '🎬 Фильмы':          '#ff6b6b',
+  '🍳 Рецепты':         '#ffd93d',
+  '🎵 Музыка':          '#6bcb77',
+  '🎁 Подарки':         '#ff6bb5',
+  '👕 Одежда':          '#4d96ff',
+  '📍 Интересные места':'#c77dff',
+};
+
+// ──────────────────── Navigation ────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen.active').forEach(s => {
+    s.classList.add('slide-out');
+    setTimeout(() => s.classList.remove('active', 'slide-out'), 260);
+  });
+  const next = document.getElementById(id);
+  next.classList.add('active');
+  next.style.transform = 'translateX(24px)';
+  requestAnimationFrame(() => next.style.transform = '');
+}
+
+function setNavActive(id) {
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById(id);
+  if (btn) btn.classList.add('active');
+}
+
+async function showHome() {
+  setNavActive('nav-home');
+  showScreen('screen-home');
+  await loadHome();
+}
+
+function showAdd() {
+  setNavActive('nav-add');
+  state.editRecord = null;
+  document.getElementById('form-title').textContent = 'Новая заметка';
+  document.getElementById('form-submit').textContent = 'Сохранить';
+  clearForm();
+  showScreen('screen-form');
+}
+
+async function showStats() {
+  setNavActive('nav-stats');
+  showScreen('screen-stats');
+  await loadStats();
+}
+
+function showCat(cat) {
+  state.currentCat = cat;
+  setNavActive('');
+  document.getElementById('cat-title').textContent = cat;
+  showScreen('screen-cat');
+  loadCategoryRecords(cat);
+}
+
+function showDetail(record) {
+  document.getElementById('detail-back').onclick = () => {
+    state.currentCat ? showCat(state.currentCat) : showHome();
+  };
+  renderDetail(record);
+  showScreen('screen-detail');
+}
+
+// ──────────────────── Load data ────────────────────
+async function loadHome() {
+  try {
+    const [{ records }, { by_category, total }, { categories }] = await Promise.all([
+      GET('/api/records?limit=6'),
+      GET('/api/stats'),
+      GET('/api/categories'),
+    ]);
+    state.records    = records;
+    state.stats      = by_category;
+    state.categories = categories;
+
+    renderStatsRow(by_category, total);
+    renderCatGrid(by_category, categories);
+    renderRecentList(records);
+    document.getElementById('home-sub').textContent =
+      total ? `${total} заметок в коллекции` : 'Пока нет заметок';
+  } catch (e) {
+    showToast('Ошибка загрузки: ' + e.message);
+  }
+}
+
+async function loadCategoryRecords(cat) {
+  document.getElementById('cat-records').innerHTML = loaderHTML();
+  try {
+    const { records, count } = await GET(`/api/records?category=${encodeURIComponent(cat)}`);
+    document.getElementById('cat-sub').textContent = `${count} заметок`;
+    if (!records.length) {
+      document.getElementById('cat-records').innerHTML = emptyHTML('📭', 'Пусто', 'В этой категории нет заметок. Добавь первую!');
+      return;
+    }
+    document.getElementById('cat-records').innerHTML = '';
+    records.forEach((r, i) => {
+      const el = recordCard(r);
+      el.style.animationDelay = `${i * 40}ms`;
+      document.getElementById('cat-records').appendChild(el);
+    });
+  } catch (e) {
+    showToast(e.message);
+  }
+}
+
+async function loadStats() {
+  document.getElementById('stats-content').innerHTML = loaderHTML();
+  try {
+    const { by_category, total } = await GET('/api/stats');
+    renderStatsScreen(by_category, total);
+  } catch (e) {
+    showToast(e.message);
+  }
+}
+
+// ──────────────────── Renderers ────────────────────
+function renderStatsRow(by_cat, total) {
+  const cats = Object.keys(by_cat).length;
+  document.getElementById('stats-row').innerHTML = `
+    <div class="stat-pill"><span class="num">${total}</span><span class="lbl">Заметок</span></div>
+    <div class="stat-pill"><span class="num">${cats}</span><span class="lbl">Категорий</span></div>
+    <div class="stat-pill"><span class="num">${total ? Math.max(...Object.values(by_cat)) : 0}</span><span class="lbl">Максимум</span></div>
+  `;
+}
+
+function renderCatGrid(by_cat, categories) {
+  const grid = document.getElementById('cat-grid');
+  grid.innerHTML = '';
+  categories.forEach((cat, i) => {
+    const count = by_cat[cat] || 0;
+    const emoji = cat.split(' ')[0];
+    const name  = cat.slice(emoji.length + 1);
+    const color = CAT_COLORS[cat] || 'var(--accent)';
+    const div   = document.createElement('div');
+    div.className = 'cat-card';
+    div.style.cssText = `--cat-color:${color}; animation-delay:${i * 50}ms`;
+    div.innerHTML = `
+      <span class="cat-emoji">${emoji}</span>
+      <span class="cat-name">${name}</span>
+      <span class="cat-count">${count} заметок</span>
+      <div class="cat-dot"></div>
+    `;
+    div.onclick = () => showCat(cat);
+    grid.appendChild(div);
+  });
+}
+
+function renderRecentList(records) {
+  const list = document.getElementById('recent-list');
+  const label = document.getElementById('recent-label');
+  if (!records.length) {
+    label.style.display = 'none';
+    list.innerHTML = emptyHTML('✨', 'Начни коллекцию', 'Нажми + чтобы добавить первую заметку');
+    return;
+  }
+  label.style.display = 'block';
+  list.innerHTML = '';
+  records.forEach((r, i) => {
+    const el = recordCard(r);
+    el.style.animationDelay = `${i * 50}ms`;
+    list.appendChild(el);
+  });
+}
+
+function recordCard(record) {
+  const div = document.createElement('div');
+  div.className = 'record-card';
+
+  const stars    = record.rating ? '⭐'.repeat(record.rating) : '';
+  const tagsStr  = record.tags?.map(t => '#' + t).join(' ') || '';
+  const dateStr  = formatDate(record.created_at);
+  const catColor = CAT_COLORS[record.category] || 'var(--accent)';
+  const emoji    = record.category?.split(' ')[0] || '';
+
+  div.innerHTML = `
+    <div class="record-body">
+      <div class="record-cat-badge" style="color:${catColor}">${emoji} ${record.category?.slice(emoji.length+1)}</div>
+      <div class="record-title">${esc(record.title)}</div>
+      <div class="record-desc">${esc(record.description)}</div>
+      <div class="record-meta">
+        ${stars ? `<span class="record-stars">${stars}</span>` : ''}
+        ${tagsStr ? `<span class="record-tags">${esc(tagsStr)}</span>` : ''}
+        <span class="record-date">${dateStr}</span>
+      </div>
+    </div>
+  `;
+  div.onclick = () => showDetail(record);
+  return div;
+}
+
+function renderDetail(record) {
+  const stars = record.rating ? '⭐'.repeat(record.rating) : '';
+  const color = CAT_COLORS[record.category] || 'var(--accent)';
+  let html = '';
+
+  html += `<div class="detail-cat" style="background:${color}22;color:${color}">${esc(record.category)}</div>`;
+  html += `<div class="detail-title">${esc(record.title)}</div>`;
+  if (stars) html += `<span class="detail-stars">${stars}</span>`;
+  html += `<div class="detail-date">📅 ${formatDate(record.created_at)}</div>`;
+
+  html += `<div class="detail-block">
+    <div class="detail-block-label">Описание</div>
+    <div class="detail-block-text">${esc(record.description)}</div>
+  </div>`;
+
+  if (record.link) {
+    html += `<div class="detail-block">
+      <div class="detail-block-label">Ссылка</div>
+      <a class="detail-link" href="${esc(record.link)}" target="_blank">${esc(record.link)}</a>
+    </div>`;
+  }
+
+  if (record.tags?.length) {
+    html += `<div class="detail-block">
+      <div class="detail-block-label">Теги</div>
+      <div class="detail-tags">${record.tags.map(t => `<span class="tag-pill">#${esc(t)}</span>`).join('')}</div>
+    </div>`;
+  }
+
+  html += `<div class="detail-actions">
+    <button class="btn btn-ghost" onclick="editRecord('${record.id}')">✏️ Изменить</button>
+    <button class="btn btn-danger" onclick="confirmDelete('${record.id}', '${esc(record.title)}')">🗑</button>
+  </div>`;
+
+  document.getElementById('detail-content').innerHTML = html;
+  document.querySelector('#detail-content').dataset.recordId = record.id;
+}
+
+function renderStatsScreen(by_cat, total) {
+  if (!total) {
+    document.getElementById('stats-content').innerHTML =
+      emptyHTML('📊', 'Нет данных', 'Добавь первую заметку и статистика появится здесь');
+    return;
+  }
+  const max = Math.max(...Object.values(by_cat));
+  let html = `<div class="stats-row">
+    <div class="stat-pill"><span class="num">${total}</span><span class="lbl">Всего</span></div>
+    <div class="stat-pill"><span class="num">${Object.keys(by_cat).length}</span><span class="lbl">Категорий</span></div>
+  </div>`;
+  html += '<div class="section-label">По категориям</div>';
+
+  const sorted = Object.entries(by_cat).sort((a, b) => b[1] - a[1]);
+  sorted.forEach(([cat, count]) => {
+    const pct   = Math.round(count / max * 100);
+    const color = CAT_COLORS[cat] || 'var(--accent)';
+    html += `
+      <div class="detail-block" style="margin-bottom:8px;cursor:pointer" onclick="showCat('${esc(cat)}')">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+          <span style="font-weight:600">${esc(cat)}</span>
+          <span style="color:var(--hint)">${count}</span>
+        </div>
+        <div style="height:6px;background:var(--bg);border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${color};border-radius:3px;transition:width .6s ease"></div>
+        </div>
+      </div>`;
+  });
+  document.getElementById('stats-content').innerHTML = html;
+}
+
+// ──────────────────── Form ────────────────────
+function clearForm() {
+  document.getElementById('form-title-in').value = '';
+  document.getElementById('form-desc').value     = '';
+  document.getElementById('form-link').value     = '';
+  document.getElementById('form-tags').value     = '';
+  document.getElementById('form-reminder').value = '';
+  document.querySelectorAll('.star-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.cat-pick-btn').forEach(b => b.classList.remove('selected'));
+  state._formRating = 0;
+  state._formCat    = null;
+}
+
+function fillFormForEdit(record) {
+  state.editRecord = record;
+  state._formCat    = record.category;
+  state._formRating = record.rating || 0;
+
+  document.getElementById('form-title').textContent    = 'Редактирование';
+  document.getElementById('form-submit').textContent   = 'Сохранить изменения';
+  document.getElementById('form-title-in').value = record.title;
+  document.getElementById('form-desc').value     = record.description;
+  document.getElementById('form-link').value     = record.link || '';
+  document.getElementById('form-tags').value     = record.tags?.join(', ') || '';
+
+  document.querySelectorAll('.cat-pick-btn').forEach(b => {
+    b.classList.toggle('selected', b.dataset.cat === record.category);
+  });
+  document.querySelectorAll('.star-btn').forEach(b => {
+    b.classList.toggle('active', +b.dataset.v <= record.rating);
+  });
+  showScreen('screen-form');
+}
+
+async function editRecord(id) {
+  try {
+    const record = await GET(`/api/records/${id}`);
+    fillFormForEdit(record);
+  } catch (e) {
+    showToast(e.message);
+  }
+}
+
+// ──────────────────── Init category picker ────────────────────
+function initCatPicker() {
+  const picker = document.getElementById('form-cat-picker');
+  picker.innerHTML = '';
+  const cats = [
+    '🎬 Фильмы', '🍳 Рецепты', '🎵 Музыка',
+    '🎁 Подарки', '👕 Одежда',  '📍 Интересные места'
+  ];
+  cats.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className     = 'cat-pick-btn';
+    btn.dataset.cat   = cat;
+    btn.textContent   = cat;
+    btn.onclick = () => {
+      document.querySelectorAll('.cat-pick-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      state._formCat = cat;
+    };
+    picker.appendChild(btn);
+  });
+}
+
+// ──────────────────── Star picker ────────────────────
+document.querySelectorAll('.star-btn').forEach(btn => {
+  btn.onclick = () => {
+    const v = +btn.dataset.v;
+    state._formRating = v;
+    document.querySelectorAll('.star-btn').forEach(b => {
+      b.classList.toggle('active', +b.dataset.v <= v);
+    });
+  };
+});
+
+// ──────────────────── Form submit ────────────────────
+document.getElementById('form-submit').onclick = async () => {
+  const title = document.getElementById('form-title-in').value.trim();
+  const desc  = document.getElementById('form-desc').value.trim();
+  const link  = document.getElementById('form-link').value.trim();
+  const tags  = document.getElementById('form-tags').value.split(',').map(t => t.trim().replace(/\s+/g, '_')).filter(Boolean);
+  const reminder = document.getElementById('form-reminder').value;
+
+  if (!state._formCat) { showToast('Выбери категорию'); return; }
+  if (!title)          { showToast('Напиши название');   return; }
+  if (!desc)           { showToast('Добавь описание');   return; }
+
+  const btn = document.getElementById('form-submit');
+  btn.disabled = true;
+  btn.textContent = '…';
+
+  try {
+    if (state.editRecord) {
+      await PUT(`/api/records/${state.editRecord.id}`, {
+        title, description: desc, link: link || null,
+        rating: state._formRating, tags,
+      });
+      showToast('✅ Запись обновлена!');
+    } else {
+      await POST('/api/records', {
+        category: state._formCat, title, description: desc,
+        link: link || null, rating: state._formRating, tags,
+        reminder_days: reminder ? +reminder : null,
+      });
+      showToast('✅ Заметка добавлена!');
+      if (tg) tg.HapticFeedback?.notificationOccurred('success');
+    }
+    clearForm();
+    showHome();
+  } catch (e) {
+    showToast('Ошибка: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = state.editRecord ? 'Сохранить изменения' : 'Сохранить';
+  }
+};
+
+// Form back
+document.getElementById('form-back').onclick = () => {
+  state.currentCat ? showCat(state.currentCat) : showHome();
+};
+
+// ──────────────────── Delete ────────────────────
+let _deleteId = null;
+
+function confirmDelete(id, title) {
+  _deleteId = id;
+  document.getElementById('del-record-name').textContent = `«${title}» будет удалена навсегда.`;
+  document.getElementById('del-overlay').classList.add('show');
+}
+
+function closeOverlay() {
+  document.getElementById('del-overlay').classList.remove('show');
+  _deleteId = null;
+}
+
+document.getElementById('del-confirm-btn').onclick = async () => {
+  if (!_deleteId) return;
+  try {
+    await DELETE(`/api/records/${_deleteId}`);
+    closeOverlay();
+    showToast('🗑 Запись удалена');
+    showHome();
+  } catch (e) {
+    showToast(e.message);
+  }
+};
+
+// Close overlay on background tap
+document.getElementById('del-overlay').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeOverlay();
+});
+
+// ──────────────────── Search ────────────────────
+let _searchTimer = null;
+document.getElementById('search-input').addEventListener('input', e => {
+  clearTimeout(_searchTimer);
+  const q = e.target.value.trim();
+  if (!q) {
+    loadHome();
+    return;
+  }
+  _searchTimer = setTimeout(async () => {
+    try {
+      const { records } = await GET(`/api/records?q=${encodeURIComponent(q)}&limit=30`);
+      const label = document.getElementById('recent-label');
+      label.textContent = `Результаты (${records.length})`;
+      label.style.display = 'block';
+      document.getElementById('stats-row').innerHTML   = '';
+      document.getElementById('cat-grid').innerHTML    = '';
+      const list = document.getElementById('recent-list');
+      list.innerHTML = '';
+      if (!records.length) {
+        list.innerHTML = emptyHTML('🔍', 'Ничего не найдено', `По запросу «${q}» нет заметок`);
+        return;
+      }
+      records.forEach(r => list.appendChild(recordCard(r)));
+    } catch (e) { showToast(e.message); }
+  }, 300);
+});
+
+document.getElementById('search-clear').onclick = () => {
+  document.getElementById('search-input').value = '';
+  loadHome();
+};
+
+// ──────────────────── Helpers ────────────────────
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function formatDate(iso) {
+  if (!iso) return '';
+  try {
+    return new Date(iso).toLocaleDateString('ru-RU', {day:'2-digit', month:'short', year:'numeric'});
+  } catch { return ''; }
+}
+
+function loaderHTML() {
+  return `<div class="loader"><div class="spinner"></div> Загрузка…</div>`;
+}
+
+function emptyHTML(icon, title, sub) {
+  return `<div class="empty"><div class="empty-icon">${icon}</div><div class="empty-title">${title}</div><div class="empty-sub">${sub}</div></div>`;
+}
+
+let _toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ──────────────────── Boot ────────────────────
+initCatPicker();
+loadHome();
+</script>
+</body>
+</html>
