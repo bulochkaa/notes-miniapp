@@ -4,4 +4,4 @@ aiogram==3.13.0
 python-dotenv==1.0.1
 aiofiles==23.2.1
 python-multipart==0.0.12
-pydantic==2.9.0
+pydantic==2.8.2
