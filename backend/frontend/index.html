@@ -926,11 +926,11 @@
       <div class="form-group">
         <label class="form-label">Оценка</label>
         <div class="star-picker" id="form-stars">
-          <button class="star-btn" data-v="1">⭐</button>
-          <button class="star-btn" data-v="2">⭐</button>
-          <button class="star-btn" data-v="3">⭐</button>
-          <button class="star-btn" data-v="4">⭐</button>
-          <button class="star-btn" data-v="5">⭐</button>
+          <button type="button" class="star-btn" data-v="1">⭐</button>
+          <button type="button" class="star-btn" data-v="2">⭐</button>
+          <button type="button" class="star-btn" data-v="3">⭐</button>
+          <button type="button" class="star-btn" data-v="4">⭐</button>
+          <button type="button" class="star-btn" data-v="5">⭐</button>
         </div>
       </div>
       <div class="form-group">
@@ -939,7 +939,7 @@
       </div>
       <div class="form-group">
         <label class="form-label">Напоминание</label>
-        <button class="reminder-pick-btn" id="reminder-pick-btn" onclick="openCalendar()">
+        <button type="button" class="reminder-pick-btn" id="reminder-pick-btn" onclick="openCalendar()">
           <span id="reminder-pick-icon">🔔</span>
           <span id="reminder-pick-text">Выбрать дату напоминания</span>
           <span id="reminder-pick-clear" onclick="clearReminder(event)">✕</span>
