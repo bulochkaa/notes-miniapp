@@ -5,20 +5,18 @@ Tables are created automatically on first startup.
 
 import os
 import logging
-from datetime import datetime
-from typing import Optional
 import uuid
+from datetime import datetime
 
 from sqlalchemy import (
-    BigInteger, Column, DateTime, Integer,
-    String, Text, ARRAY, select, delete, update
+    BigInteger, Boolean, Column, DateTime, Integer,
+    String, Text, ARRAY,
 )
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 logger = logging.getLogger(__name__)
 
-# Railway provides DATABASE_URL as postgres:// — SQLAlchemy needs postgresql+asyncpg://
 DATABASE_URL = os.getenv("DATABASE_URL", "").replace(
     "postgres://", "postgresql+asyncpg://"
 ).replace(
@@ -28,8 +26,6 @@ DATABASE_URL = os.getenv("DATABASE_URL", "").replace(
 engine = create_async_engine(DATABASE_URL, echo=False)
 AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
-
-# ────────────────────── Models ──────────────────────
 
 class Base(DeclarativeBase):
     pass
@@ -55,9 +51,14 @@ class Reminder(Base):
     __tablename__ = "reminders"
 
     id         = Column(String(8),  primary_key=True, default=lambda: str(uuid.uuid4())[:8])
-    user_id    = Column(BigInteger, nullable=False)
+    user_id    = Column(BigInteger, nullable=False, index=True)
     record_id  = Column(String(8),  nullable=False)
     remind_at  = Column(DateTime,   nullable=False)
+    # New fields
+    remind_time   = Column(String(5),   nullable=True)   # "09:00"
+    repeat_type   = Column(String(16),  nullable=True)   # null | "weekly" | "monthly"
+    emoji         = Column(String(8),   nullable=True)   # reminder emoji
+    is_active     = Column(Boolean,     default=True)
 
 
 async def init_db():
