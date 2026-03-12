@@ -360,7 +360,7 @@ def _format_card(record: dict) -> str:
 
 # ────────────────────── Static files ────────────────────────────────
 
-app.mount("/app", StaticFiles(directory="../frontend", html=True), name="frontend")
+app.mount("/app", StaticFiles(directory="frontend", html=True), name="frontend")
 
 @app.get("/")
 async def root():
