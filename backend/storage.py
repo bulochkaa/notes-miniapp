@@ -95,6 +95,27 @@ async def delete_reminder(rid: str) -> bool:
             await s.commit(); return True
         except SQLAlchemyError: return False
 
+async def hard_delete_reminder(rid: str) -> bool:
+    async with AsyncSessionLocal() as s:
+        try:
+            await s.execute(delete(Reminder).where(Reminder.id == rid))
+            await s.commit(); return True
+        except SQLAlchemyError: return False
+
+async def hard_delete_past_reminders(user_id: int) -> int:
+    async with AsyncSessionLocal() as s:
+        try:
+            result = await s.execute(
+                select(Reminder).where(Reminder.user_id == user_id, Reminder.is_active == False)
+            )
+            rems = result.scalars().all()
+            for r in rems:
+                await s.delete(r)
+            await s.commit()
+            return len(rems)
+        except SQLAlchemyError as e:
+            await s.rollback(); logger.error(e); return 0
+
 async def get_due_reminders() -> list[dict]:
     async with AsyncSessionLocal() as s:
         try:

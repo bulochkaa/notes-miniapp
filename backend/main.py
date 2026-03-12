@@ -393,10 +393,22 @@ async def create_reminder(body: ReminderCreate, request: Request):
     return {"id": rid}
 
 
+@app.delete("/api/reminders/past")
+async def clear_past_reminders(request: Request):
+    user_id = get_user_id(request)
+    count = await storage.hard_delete_past_reminders(user_id)
+    return {"ok": True, "deleted": count}
+
 @app.delete("/api/reminders/{reminder_id}")
 async def delete_reminder(reminder_id: str, request: Request):
-    get_user_id(request)
-    ok = await storage.delete_reminder(reminder_id)
+    user_id = get_user_id(request)
+    # Check if reminder is already inactive → hard delete, otherwise soft delete
+    all_rems = await storage.get_reminders(user_id, include_inactive=True)
+    rem = next((r for r in all_rems if r["id"] == reminder_id), None)
+    if rem and not rem["is_active"]:
+        ok = await storage.hard_delete_reminder(reminder_id)
+    else:
+        ok = await storage.delete_reminder(reminder_id)
     if not ok:
         raise HTTPException(status_code=404, detail="Not found")
     return {"ok": True}

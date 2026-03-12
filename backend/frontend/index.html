@@ -2151,15 +2151,11 @@ async function showReminders() {
 // old loadReminders removed
 
 async function clearPastReminders() {
-  const list = document.getElementById('reminders-list');
-  // Get all inactive reminder IDs from current DOM
-  // We reload with include_inactive to get them
   try {
-    const allData = await GET('/api/reminders?include_inactive=true');
-    const past = (allData.reminders || []).filter(r => !r.is_active);
-    if (!past.length) { showToast('Нет прошедших'); return; }
-    await Promise.all(past.map(r => apiDelete('/api/reminders/' + r.id)));
-    showToast(`🗑 Удалено ${past.length} прошедших`);
+    const result = await apiDelete('/api/reminders/past');
+    if (result.deleted === 0) { showToast('Нет прошедших'); return; }
+    showToast(`🗑 Удалено ${result.deleted} прошедших`);
+    document.getElementById('clear-past-btn').style.display = 'none';
     loadReminders();
   } catch(e) { showToast('Ошибка удаления'); }
 }
