@@ -5,6 +5,7 @@ FastAPI backend — serves both:
   • Static frontend files               (  /app/...  )
 """
 
+import asyncio
 import hashlib
 import hmac
 import json
@@ -29,6 +30,7 @@ from pydantic import BaseModel
 
 import storage
 from config import BOT_TOKEN, GROUP_ID, MINIAPP_URL, TOPICS, WEBHOOK_URL
+from database import init_db
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -37,10 +39,67 @@ bot = Bot(token=BOT_TOKEN)
 dp  = Dispatcher(storage=MemoryStorage())
 
 
+
+# ────────────────────── Reminder background task ────────────────────
+
+async def reminder_loop():
+    """Check every 60 seconds and send due reminders via Telegram."""
+    logger.info("Reminder loop started.")
+    while True:
+        try:
+            due = await storage.get_due_reminders()
+            for reminder in due:
+                user_id   = reminder["user_id"]
+                record_id = reminder["record_id"]
+                record    = await storage.get_record(record_id)
+                if not record:
+                    continue
+
+                # Build card text
+                cat   = record.get("category", "")
+                title = record.get("title", "")
+                desc  = record.get("description", "")
+                link  = record.get("link", "")
+                stars = "⭐" * record.get("rating", 0)
+                tags  = "  ".join(f"#{t}" for t in record.get("tags", []))
+
+                text = (
+                    f"⏰ <b>Напоминание!</b>\n\n"
+                    f"┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n"
+                    f"<b>{cat}</b>\n\n"
+                    f"🎥 <b>Название</b>\n{title}\n"
+                )
+                if stars:
+                    text += f"\n⭐ <b>Оценка</b>  {stars}\n"
+                text += f"\n📝 <b>Описание</b>\n{desc}\n"
+                if link:
+                    text += f"\n🔗 <b>Ссылка</b>\n{link}\n"
+                if tags:
+                    text += f"\n🏷  {tags}\n"
+                text += "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄"
+
+                try:
+                    await bot.send_message(
+                        user_id, text,
+                        parse_mode="HTML",
+                        disable_web_page_preview=True,
+                    )
+                    logger.info(f"Reminder sent to {user_id} for record {record_id}")
+                except Exception as e:
+                    logger.error(f"Could not send reminder to {user_id}: {e}")
+
+        except Exception as e:
+            logger.error(f"Reminder loop error: {e}")
+
+        await asyncio.sleep(60)
+
+
 # ────────────────────── Startup / shutdown ──────────────────────────
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    await init_db()
+    reminder_task = asyncio.create_task(reminder_loop())
     if WEBHOOK_URL:
         await bot.set_webhook(WEBHOOK_URL)
         await bot.set_chat_menu_button(menu_button=MenuButtonWebApp(
@@ -49,6 +108,7 @@ async def lifespan(app: FastAPI):
         ))
         logger.info(f"Webhook set: {WEBHOOK_URL}")
     yield
+    reminder_task.cancel()
     await bot.session.close()
 
 
@@ -105,7 +165,8 @@ class RecordCreate(BaseModel):
     photo:       Optional[str] = None
     rating:      int           = 0
     tags:        list[str]     = []
-    reminder_days: Optional[int] = None
+    reminder_days: Optional[int] = None    # legacy
+    reminder_date: Optional[str] = None    # ISO string from calendar
 
 
 class RecordUpdate(BaseModel):
@@ -174,7 +235,13 @@ async def create_record(body: RecordCreate, request: Request):
 
     record_id = await storage.add_record(record)
 
-    if body.reminder_days:
+    if body.reminder_date:
+        try:
+            remind_at = datetime.fromisoformat(body.reminder_date.replace('Z', '+00:00'))
+            await storage.add_reminder(user_id, record_id, remind_at)
+        except Exception as e:
+            logger.warning(f"Invalid reminder_date: {e}")
+    elif body.reminder_days:
         remind_at = datetime.now() + timedelta(days=body.reminder_days)
         await storage.add_reminder(user_id, record_id, remind_at)
 
@@ -293,7 +360,7 @@ def _format_card(record: dict) -> str:
 
 # ────────────────────── Static files ────────────────────────────────
 
-app.mount("/app", StaticFiles(directory="frontend", html=True), name="frontend")
+app.mount("/app", StaticFiles(directory="../frontend", html=True), name="frontend")
 
 @app.get("/")
 async def root():
