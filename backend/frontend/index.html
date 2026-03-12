@@ -1259,10 +1259,27 @@
 <div class="create-cat-overlay" id="crop-overlay">
   <div class="create-cat-sheet" style="padding:16px 16px calc(24px + var(--safe-b))">
     <div class="create-cat-title">✂️ Обрезать фото</div>
-    <div id="crop-container" style="position:relative;overflow:hidden;background:#000;border-radius:12px;touch-action:none;user-select:none;margin-bottom:14px">
-      <img id="crop-source" style="display:block;max-width:100%;max-height:55vh;margin:0 auto">
-      <div id="crop-box" style="position:absolute;border:2px solid #fff;box-shadow:0 0 0 9999px rgba(0,0,0,.55);cursor:move;touch-action:none"></div>
+
+    <!-- Live preview with crop box -->
+    <div id="crop-container" style="position:relative;overflow:hidden;background:#000;border-radius:12px;margin-bottom:14px">
+      <img id="crop-source" style="display:block;width:100%;max-height:50vh;object-fit:contain">
+      <div id="crop-box" style="position:absolute;border:2px solid #fff;box-shadow:0 0 0 9999px rgba(0,0,0,.55);pointer-events:none"></div>
     </div>
+
+    <!-- Sliders -->
+    <div style="margin-bottom:10px">
+      <div style="font-size:12px;color:var(--hint);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;font-weight:600">↔ По горизонтали</div>
+      <input type="range" id="crop-x" min="0" max="100" value="0" style="width:100%;accent-color:var(--accent)" oninput="updateCropPreview()">
+    </div>
+    <div style="margin-bottom:10px">
+      <div style="font-size:12px;color:var(--hint);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;font-weight:600">↕ По вертикали</div>
+      <input type="range" id="crop-y" min="0" max="100" value="0" style="width:100%;accent-color:var(--accent)" oninput="updateCropPreview()">
+    </div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:12px;color:var(--hint);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;font-weight:600">⬜ Размер области</div>
+      <input type="range" id="crop-size" min="20" max="100" value="80" style="width:100%;accent-color:var(--accent)" oninput="updateCropPreview()">
+    </div>
+
     <div style="display:flex;gap:8px">
       <button type="button" class="btn btn-primary" onclick="confirmCrop()" style="flex:2">✂️ Обрезать</button>
       <button type="button" class="btn btn-ghost" onclick="closeCrop()" style="flex:1">Отмена</button>
@@ -1432,14 +1449,14 @@ async function showAdd() {
   state.currentCat = null;
   document.getElementById('form-title').textContent = 'Новая заметка';
   document.getElementById('form-submit').textContent = 'Сохранить';
+  showScreen('screen-form');
   clearForm();
-  // Await fresh custom categories before building picker
+  // Always fetch fresh list so newly created cats appear
   try {
     const data = await GET('/api/categories');
     state.customCategories = data.custom || [];
   } catch(e) {}
   initCatPicker();
-  showScreen('screen-form');
 }
 
 async function showStats() {
@@ -2156,7 +2173,8 @@ async function shareRecord(recordId) {
 
 // ──────────────────── Image upload ────────────────────
 // ──────────────────── Image crop logic ────────────────────
-let _cropData = { startX:0, startY:0, boxX:0, boxY:0, boxW:0, boxH:0, dragging:false, resizing:false, imgW:0, imgH:0 };
+// Uses sliders for X/Y/Size — works perfectly on mobile Telegram
+let _cropSrc = null;
 
 function handleImageUpload(event) {
   const file = event.target.files[0];
@@ -2168,6 +2186,7 @@ function handleImageUpload(event) {
 }
 
 function openCrop(src) {
+  _cropSrc = src;
   const ov = document.getElementById('crop-overlay');
   ov.style.opacity = ''; ov.style.pointerEvents = '';
   ov.classList.add('show');
@@ -2175,31 +2194,46 @@ function openCrop(src) {
   const img = document.getElementById('crop-source');
   img.src = src;
   img.onload = () => {
-    // Wait two frames so the overlay is visible and has real dimensions
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      const container = document.getElementById('crop-container');
-      const iw = img.offsetWidth || img.naturalWidth;
-      const ih = img.offsetHeight || Math.round(img.naturalHeight * (img.offsetWidth / img.naturalWidth));
-      _cropData.imgW = iw; _cropData.imgH = ih;
-      const side = Math.min(iw, ih) * 0.8;
-      _cropData.boxX = (iw - side) / 2;
-      _cropData.boxY = (ih - side) / 2;
-      _cropData.boxW = side;
-      _cropData.boxH = side;
-      container.style.height = ih + 'px';
-      updateCropBox();
-      setupCropDrag();
+      initCropSliders(img);
     }));
   };
 }
 
-function updateCropBox() {
+function initCropSliders(img) {
+  // Reset sliders
+  document.getElementById('crop-x').value = 0;
+  document.getElementById('crop-y').value = 0;
+  document.getElementById('crop-size').value = 80;
+  updateCropPreview(img);
+}
+
+function updateCropPreview(img) {
+  if (!img) img = document.getElementById('crop-source');
+  const nw = img.naturalWidth, nh = img.naturalHeight;
+  const pct   = parseInt(document.getElementById('crop-size').value) / 100;
+  const px    = parseInt(document.getElementById('crop-x').value)    / 100;
+  const py    = parseInt(document.getElementById('crop-y').value)    / 100;
+
+  const side = Math.min(nw, nh) * pct;
+  const maxX = nw - side, maxY = nh - side;
+  const cx = maxX * px, cy = maxY * py;
+
+  // Show preview overlay using CSS clip on displayed image
+  const dw = img.offsetWidth, dh = img.offsetHeight || (nh * dw / nw);
+  const scaleX = dw / nw, scaleY = dh / nh;
+
+  const bx = cx * scaleX, by = cy * scaleY;
+  const bw = side * scaleX, bh = side * scaleY;
+
   const box = document.getElementById('crop-box');
-  const d = _cropData;
-  box.style.left   = d.boxX + 'px';
-  box.style.top    = d.boxY + 'px';
-  box.style.width  = d.boxW + 'px';
-  box.style.height = d.boxH + 'px';
+  box.style.left   = bx + 'px';
+  box.style.top    = by + 'px';
+  box.style.width  = bw + 'px';
+  box.style.height = bh + 'px';
+
+  const container = document.getElementById('crop-container');
+  container.style.height = dh + 'px';
 }
 
 function closeCrop() {
@@ -2211,21 +2245,21 @@ function closeCrop() {
 
 function confirmCrop() {
   const img = document.getElementById('crop-source');
-  const d = _cropData;
-  // Scale from display size to natural image size
-  const scaleX = img.naturalWidth  / d.imgW;
-  const scaleY = img.naturalHeight / d.imgH;
+  const nw = img.naturalWidth, nh = img.naturalHeight;
+  const pct = parseInt(document.getElementById('crop-size').value) / 100;
+  const px  = parseInt(document.getElementById('crop-x').value)    / 100;
+  const py  = parseInt(document.getElementById('crop-y').value)    / 100;
+
+  const side = Math.min(nw, nh) * pct;
+  const cx = (nw - side) * px;
+  const cy = (nh - side) * py;
+
+  const outSize = 900;
   const canvas = document.createElement('canvas');
-  const size = 800; // output max size
-  const ratio = d.boxW / d.boxH;
-  canvas.width  = ratio >= 1 ? size : Math.round(size * ratio);
-  canvas.height = ratio >= 1 ? Math.round(size / ratio) : size;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(img,
-    d.boxX * scaleX, d.boxY * scaleY, d.boxW * scaleX, d.boxH * scaleY,
-    0, 0, canvas.width, canvas.height
-  );
-  const b64 = canvas.toDataURL('image/jpeg', 0.82);
+  canvas.width = canvas.height = outSize;
+  canvas.getContext('2d').drawImage(img, cx, cy, side, side, 0, 0, outSize, outSize);
+
+  const b64 = canvas.toDataURL('image/jpeg', 0.85);
   state._formPhoto = b64;
   document.getElementById('img-preview').src = b64;
   document.getElementById('img-preview').classList.add('show');
@@ -2233,49 +2267,7 @@ function confirmCrop() {
   document.getElementById('img-upload-area').classList.add('has-image');
   document.getElementById('img-remove-btn').classList.add('show');
   closeCrop();
-}
-
-function setupCropDrag() {
-  const box = document.getElementById('crop-box');
-  const container = document.getElementById('crop-container');
-  let startX, startY, startBX, startBY;
-
-  function getXY(e) {
-    const t = e.touches ? e.touches[0] : e;
-    const rect = container.getBoundingClientRect();
-    return { x: t.clientX - rect.left, y: t.clientY - rect.top };
-  }
-
-  function onDown(e) {
-    e.preventDefault();
-    const p = getXY(e);
-    startX = p.x; startY = p.y;
-    startBX = _cropData.boxX; startBY = _cropData.boxY;
-    _cropData.dragging = true;
-  }
-
-  function onMove(e) {
-    if (!_cropData.dragging) return;
-    e.preventDefault();
-    const p = getXY(e);
-    const dx = p.x - startX, dy = p.y - startY;
-    const d = _cropData;
-    d.boxX = Math.max(0, Math.min(d.imgW - d.boxW, startBX + dx));
-    d.boxY = Math.max(0, Math.min(d.imgH - d.boxH, startBY + dy));
-    updateCropBox();
-  }
-
-  function onUp() { _cropData.dragging = false; }
-
-  // Remove old listeners first
-  const newBox = box.cloneNode(true);
-  box.parentNode.replaceChild(newBox, box);
-  newBox.addEventListener('mousedown',  onDown, { passive: false });
-  newBox.addEventListener('touchstart', onDown, { passive: false });
-  container.addEventListener('mousemove',  onMove, { passive: false });
-  container.addEventListener('touchmove',  onMove, { passive: false });
-  container.addEventListener('mouseup',    onUp);
-  container.addEventListener('touchend',   onUp);
+  showToast('✅ Фото добавлено!');
 }
 
 function removeImage() {
@@ -2304,10 +2296,6 @@ async function loadCustomCategories() {
     const data = await GET('/api/categories');
     state.customCategories = data.custom || [];
     renderCustomCategories();
-    // Fix1: Refresh category picker in add form with new custom cats
-    if (document.getElementById('form-cat-picker').children.length > 0) {
-      initCatPicker();
-    }
   } catch(e) { state.customCategories = []; }
 }
 
