@@ -994,9 +994,9 @@
 <div class="cal-overlay" id="cal-overlay">
   <div class="cal-sheet">
     <div class="cal-header">
-      <button type="button" class="cal-nav" id="cal-prev">‹</button>
+      <button class="cal-nav" id="cal-prev">‹</button>
       <div class="cal-month-label" id="cal-month-label"></div>
-      <button type="button" class="cal-nav" id="cal-next">›</button>
+      <button class="cal-nav" id="cal-next">›</button>
     </div>
     <div class="cal-weekdays">
       <div class="cal-wd">Пн</div><div class="cal-wd">Вт</div>
@@ -1028,7 +1028,7 @@
       </div>
     </div>
 
-    <button type="button" class="cal-confirm-btn" id="cal-confirm" disabled>
+    <button class="cal-confirm-btn" id="cal-confirm" disabled>
       Выбрать дату
     </button>
   </div>
@@ -1684,7 +1684,6 @@ function renderCalendar() {
 
 function makeDayBtn(date, otherMonth, today) {
   const btn = document.createElement('button');
-  btn.type = 'button';
   btn.className = 'cal-day';
 
   const isPast     = date < today;
@@ -1713,7 +1712,6 @@ function renderEmojiGrid() {
   grid.innerHTML = '';
   EMOJI_OPTIONS.forEach(e => {
     const btn = document.createElement('button');
-    btn.type = 'button';
     btn.className = 'emoji-opt' + (e === _calEmoji ? ' selected' : '');
     btn.textContent = e;
     btn.onclick = () => {
@@ -1798,7 +1796,7 @@ function clearReminder(e) {
 
 // ──────────────────── Reminders Screen ────────────────────
 async function showReminders() {
-  switchScreen('reminders');
+  showScreen('screen-reminders');
   setNavActive('nav-reminders');
   await loadReminders();
 }
