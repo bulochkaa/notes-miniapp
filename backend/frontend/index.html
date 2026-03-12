@@ -1053,12 +1053,16 @@ const DELETE = (p)      => api('DELETE', p);
 
 // ──────────────────── State ────────────────────
 let state = {
-  records:    [],
-  categories: [],
-  stats:      null,
-  currentCat: null,
-  editRecord: null,
-  screenStack: [],
+  records:       [],
+  categories:    [],
+  stats:         null,
+  currentCat:    null,
+  editRecord:    null,
+  screenStack:   [],
+  _reminderDate: null,
+  _reminderEmoji:'🔔',
+  _formRating:   0,
+  _formCat:      null,
 };
 
 // Category colors (CSS variable per card)
@@ -1331,8 +1335,10 @@ function clearForm() {
   clearReminder(null);
   document.querySelectorAll('.star-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.cat-pick-btn').forEach(b => b.classList.remove('selected'));
-  state._formRating = 0;
-  state._formCat    = null;
+  state._formRating  = 0;
+  state._formCat     = null;
+  state._reminderDate  = null;
+  state._reminderEmoji = '🔔';
 }
 
 function fillFormForEdit(record) {
@@ -1427,7 +1433,13 @@ document.getElementById('form-submit').onclick = async () => {
         link: link || null, rating: state._formRating, tags,
         reminder_date: state._reminderDate ? state._reminderDate.toISOString() : null,
       });
-      showToast('✅ Заметка добавлена!');
+      if (state._reminderDate) {
+        const d = state._reminderDate;
+        const months = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+        showToast('✅ Добавлено! ⏰ Напомню ' + d.getDate() + ' ' + months[d.getMonth()]);
+      } else {
+        showToast('✅ Заметка добавлена!');
+      }
       if (tg) tg.HapticFeedback?.notificationOccurred('success');
     }
     clearForm();
@@ -1664,7 +1676,7 @@ document.getElementById('cal-next').onclick = () => {
 
 document.getElementById('cal-confirm').onclick = () => {
   if (!_calSelected) return;
-  state._reminderDate  = _calSelected;
+  state._reminderDate  = new Date(_calSelected.getTime()); // make a copy!
   state._reminderEmoji = _calEmoji;
 
   const d     = _calSelected;
@@ -1683,16 +1695,19 @@ document.getElementById('cal-overlay').addEventListener('click', e => {
 });
 
 function clearReminder(e) {
-  if (e) e.stopPropagation();
+  if (e) { e.stopPropagation(); e.preventDefault(); }
   state._reminderDate  = null;
   state._reminderEmoji = '🔔';
-  const btn = document.getElementById('reminder-pick-btn');
-  if (btn) {
-    btn.classList.remove('has-date');
-    document.getElementById('reminder-pick-icon').textContent = '🔔';
-    document.getElementById('reminder-pick-text').textContent = 'Выбрать дату напоминания';
-    document.getElementById('reminder-pick-clear').style.display = 'none';
-  }
+  try {
+    const btn = document.getElementById('reminder-pick-btn');
+    if (btn) btn.classList.remove('has-date');
+    const icon = document.getElementById('reminder-pick-icon');
+    if (icon) icon.textContent = '🔔';
+    const text = document.getElementById('reminder-pick-text');
+    if (text) text.textContent = 'Выбрать дату напоминания';
+    const clr = document.getElementById('reminder-pick-clear');
+    if (clr) clr.style.display = 'none';
+  } catch(err) {}
 }
 
 // ──────────────────── Boot ────────────────────
