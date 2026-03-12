@@ -230,7 +230,10 @@ async def get_record(record_id: str, request: Request):
 async def create_record(body: RecordCreate, request: Request):
     user_id = get_user_id(request)
 
-    if body.category not in TOPICS:
+    # Allow both system and custom categories
+    custom_cats = await storage.get_categories(user_id)
+    custom_names = [c["emoji"] + " " + c["name"] for c in custom_cats]
+    if body.category not in TOPICS and body.category not in custom_names:
         raise HTTPException(status_code=400, detail="Unknown category")
 
     record = {
@@ -246,9 +249,11 @@ async def create_record(body: RecordCreate, request: Request):
 
     text = _format_card(record)
     try:
+        # System categories → specific topic; custom → general chat
+        thread_id = TOPICS.get(body.category)
         sent = await bot.send_message(
             GROUP_ID, text,
-            message_thread_id=TOPICS[body.category],
+            message_thread_id=thread_id,
             parse_mode="HTML",
             disable_web_page_preview=True,
         )
