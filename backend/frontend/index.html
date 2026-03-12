@@ -1064,7 +1064,7 @@ const initData = tg?.initData || '';
 // ──────────────────── API ────────────────────
 const API = '';   // same origin — backend serves this file
 
-async function DELETE(path) {
+async function apiDelete(path) {
   const res = await fetch(API + path, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json', 'X-Init-Data': initData }
@@ -1824,7 +1824,7 @@ async function loadReminders() {
 
 async function deleteReminder(id) {
   try {
-    await DELETE('/api/reminders/' + id);
+    await apiDelete('/api/reminders/' + id);
     showToast('🗑 Напоминание удалено');
     loadReminders();
   } catch(e) {
