@@ -1621,12 +1621,21 @@ let _calSelected  = null;         // selected Date object
 let _calEmoji     = '🔔';
 
 function openCalendar() {
-  _calDate     = new Date();
-  _calSelected = state._reminderDate || null;
-  _calEmoji    = state._reminderEmoji || '🔔';
-  renderCalendar();
-  renderEmojiGrid();
-  document.getElementById('cal-overlay').classList.add('show');
+  try {
+    _calDate     = new Date();
+    _calSelected = state._reminderDate || null;
+    _calEmoji    = state._reminderEmoji || '🔔';
+    const overlay = document.getElementById('cal-overlay');
+    if (!overlay) { alert('overlay not found!'); return; }
+    renderCalendar();
+    renderEmojiGrid();
+    overlay.classList.add('show');
+    // Force show
+    overlay.style.opacity = '1';
+    overlay.style.pointerEvents = 'all';
+  } catch(e) {
+    alert('Calendar error: ' + e.message);
+  }
 }
 
 function closeCalendar() {
