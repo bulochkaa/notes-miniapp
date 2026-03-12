@@ -1101,7 +1101,7 @@
   <!-- ════════════ SCREEN: Category ════════════ -->
   <div class="screen" id="screen-cat">
     <div class="header">
-      <button class="back-btn" onclick="showHome()">←</button>
+      <button class="back-btn" id="cat-back" onclick="goBackFromCat()">←</button>
       <div>
         <div class="header-title" id="cat-title">Категория</div>
         <div class="header-sub" id="cat-sub"></div>
@@ -1187,10 +1187,13 @@
   <!-- ════════════ SCREEN: Reminders ════════════ -->
   <div class="screen" id="screen-reminders">
     <div class="header">
-      <div>
+      <div style="flex:1">
         <div class="header-title">⏰ Напоминания</div>
         <div class="header-sub" id="reminders-sub">Загрузка…</div>
       </div>
+      <button type="button" id="clear-past-btn" onclick="clearPastReminders()" style="display:none;background:none;border:none;color:var(--hint);font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;padding:4px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.1)">
+        🗑 Очистить
+      </button>
     </div>
     <div class="scroll-area" id="reminders-list"></div>
   </div>
@@ -1248,6 +1251,22 @@
     <button type="button" class="btn btn-ghost" onclick="closeCreateCat()" style="width:100%">
       Отмена
     </button>
+  </div>
+</div>
+
+
+<!-- Image crop overlay -->
+<div class="create-cat-overlay" id="crop-overlay">
+  <div class="create-cat-sheet" style="padding:16px 16px calc(24px + var(--safe-b))">
+    <div class="create-cat-title">✂️ Обрезать фото</div>
+    <div id="crop-container" style="position:relative;overflow:hidden;background:#000;border-radius:12px;touch-action:none;user-select:none;margin-bottom:14px">
+      <img id="crop-source" style="display:block;max-width:100%;max-height:55vh;margin:0 auto">
+      <div id="crop-box" style="position:absolute;border:2px solid #fff;box-shadow:0 0 0 9999px rgba(0,0,0,.55);cursor:move;touch-action:none"></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button type="button" class="btn btn-primary" onclick="confirmCrop()" style="flex:2">✂️ Обрезать</button>
+      <button type="button" class="btn btn-ghost" onclick="closeCrop()" style="flex:1">Отмена</button>
+    </div>
   </div>
 </div>
 
@@ -1359,6 +1378,7 @@ let state = {
   categories:    [],
   stats:         null,
   currentCat:    null,
+  fromScreen:    'home',   // where back arrow should go
   editRecord:    null,
   screenStack:   [],
   _reminderDate: null,
@@ -1409,9 +1429,11 @@ async function showHome() {
 function showAdd() {
   setNavActive('nav-add');
   state.editRecord = null;
+  state.currentCat = null;  // Fix4: clear cat so back goes home
   document.getElementById('form-title').textContent = 'Новая заметка';
   document.getElementById('form-submit').textContent = 'Сохранить';
   clearForm();
+  initCatPicker();  // Fix1: rebuild picker with latest custom cats
   showScreen('screen-form');
 }
 
@@ -1422,8 +1444,18 @@ async function showStats() {
 }
 
 function showCat(cat) {
-  state.currentCat = cat;
-  setNavActive('');
+  state.currentCat  = cat;
+  state.fromScreen  = 'home';
+  setNavActive('nav-home');
+  document.getElementById('cat-title').textContent = cat;
+  showScreen('screen-cat');
+  loadCategoryRecords(cat);
+}
+
+function showCatFrom(cat, from) {
+  state.currentCat  = cat;
+  state.fromScreen  = from;
+  setNavActive(from === 'stats' ? 'nav-stats' : 'nav-home');
   document.getElementById('cat-title').textContent = cat;
   showScreen('screen-cat');
   loadCategoryRecords(cat);
@@ -1431,7 +1463,8 @@ function showCat(cat) {
 
 function showDetail(record) {
   document.getElementById('detail-back').onclick = () => {
-    state.currentCat ? showCat(state.currentCat) : showHome();
+    if (state.currentCat) showCatFrom(state.currentCat, state.fromScreen || 'home');
+    else showHome();
   };
   renderDetail(record);
   showScreen('screen-detail');
@@ -1628,7 +1661,7 @@ function renderStatsScreen(by_cat, total) {
     const pct   = Math.round(count / max * 100);
     const color = CAT_COLORS[cat] || 'var(--accent)';
     html += `
-      <div class="detail-block" style="margin-bottom:8px;cursor:pointer" onclick="showCat('${esc(cat)}')">
+      <div class="detail-block" style="margin-bottom:8px;cursor:pointer" onclick="showCatFrom('${esc(cat)}','stats')">
         <div style="display:flex;justify-content:space-between;margin-bottom:8px">
           <span style="font-weight:600">${esc(cat)}</span>
           <span style="color:var(--hint)">${count}</span>
@@ -1692,12 +1725,15 @@ async function editRecord(id) {
 function initCatPicker() {
   const picker = document.getElementById('form-cat-picker');
   picker.innerHTML = '';
-  const cats = [
+  const systemCats = [
     '🎬 Фильмы', '🍳 Рецепты', '🎵 Музыка',
     '🎁 Подарки', '👕 Одежда',  '📍 Интересные места'
   ];
-  cats.forEach(cat => {
+  const customCats = (state.customCategories || []).map(c => c.emoji + ' ' + c.name);
+  const allCats = [...systemCats, ...customCats];
+  allCats.forEach(cat => {
     const btn = document.createElement('button');
+    btn.type          = 'button';
     btn.className     = 'cat-pick-btn';
     btn.dataset.cat   = cat;
     btn.textContent   = cat;
@@ -1775,7 +1811,8 @@ document.getElementById('form-submit').onclick = async () => {
 
 // Form back
 document.getElementById('form-back').onclick = () => {
-  state.currentCat ? showCat(state.currentCat) : showHome();
+  state.currentCat = null;  // clear so back doesn't leak navigation state
+  showHome();
 };
 
 // ──────────────────── Delete ────────────────────
@@ -2072,6 +2109,20 @@ async function showReminders() {
 
 // old loadReminders removed
 
+async function clearPastReminders() {
+  const list = document.getElementById('reminders-list');
+  // Get all inactive reminder IDs from current DOM
+  // We reload with include_inactive to get them
+  try {
+    const allData = await GET('/api/reminders?include_inactive=true');
+    const past = (allData.reminders || []).filter(r => !r.is_active);
+    if (!past.length) { showToast('Нет прошедших'); return; }
+    await Promise.all(past.map(r => apiDelete('/api/reminders/' + r.id)));
+    showToast(`🗑 Удалено ${past.length} прошедших`);
+    loadReminders();
+  } catch(e) { showToast('Ошибка удаления'); }
+}
+
 async function deleteReminder(id) {
   try {
     await apiDelete('/api/reminders/' + id);
@@ -2099,21 +2150,123 @@ async function shareRecord(recordId) {
 
 
 // ──────────────────── Image upload ────────────────────
+// ──────────────────── Image crop logic ────────────────────
+let _cropData = { startX:0, startY:0, boxX:0, boxY:0, boxW:0, boxH:0, dragging:false, resizing:false, imgW:0, imgH:0 };
+
 function handleImageUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
-  if (file.size > 5 * 1024 * 1024) { showToast('Фото не больше 5 МБ'); return; }
+  if (file.size > 10 * 1024 * 1024) { showToast('Фото не больше 10 МБ'); return; }
   const reader = new FileReader();
-  reader.onload = e => {
-    const b64 = e.target.result;
-    state._formPhoto = b64;
-    document.getElementById('img-preview').src = b64;
-    document.getElementById('img-preview').classList.add('show');
-    document.getElementById('img-upload-hint').style.display = 'none';
-    document.getElementById('img-upload-area').classList.add('has-image');
-    document.getElementById('img-remove-btn').classList.add('show');
-  };
+  reader.onload = e => openCrop(e.target.result);
   reader.readAsDataURL(file);
+}
+
+function openCrop(src) {
+  const img = document.getElementById('crop-source');
+  img.src = src;
+  img.onload = () => {
+    const container = document.getElementById('crop-container');
+    const iw = img.offsetWidth, ih = img.offsetHeight;
+    _cropData.imgW = iw; _cropData.imgH = ih;
+    // Default box: centered square, 80% size
+    const side = Math.min(iw, ih) * 0.8;
+    _cropData.boxX = (iw - side) / 2;
+    _cropData.boxY = (ih - side) / 2;
+    _cropData.boxW = side;
+    _cropData.boxH = side;
+    updateCropBox();
+    container.style.height = ih + 'px';
+  };
+  const ov = document.getElementById('crop-overlay');
+  ov.style.opacity = ''; ov.style.pointerEvents = '';
+  ov.classList.add('show');
+  setupCropDrag();
+}
+
+function updateCropBox() {
+  const box = document.getElementById('crop-box');
+  const d = _cropData;
+  box.style.left   = d.boxX + 'px';
+  box.style.top    = d.boxY + 'px';
+  box.style.width  = d.boxW + 'px';
+  box.style.height = d.boxH + 'px';
+}
+
+function closeCrop() {
+  const ov = document.getElementById('crop-overlay');
+  ov.classList.remove('show');
+  ov.style.opacity = '0'; ov.style.pointerEvents = 'none';
+  document.getElementById('img-file-input').value = '';
+}
+
+function confirmCrop() {
+  const img = document.getElementById('crop-source');
+  const d = _cropData;
+  // Scale from display size to natural image size
+  const scaleX = img.naturalWidth  / d.imgW;
+  const scaleY = img.naturalHeight / d.imgH;
+  const canvas = document.createElement('canvas');
+  const size = 800; // output max size
+  const ratio = d.boxW / d.boxH;
+  canvas.width  = ratio >= 1 ? size : Math.round(size * ratio);
+  canvas.height = ratio >= 1 ? Math.round(size / ratio) : size;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img,
+    d.boxX * scaleX, d.boxY * scaleY, d.boxW * scaleX, d.boxH * scaleY,
+    0, 0, canvas.width, canvas.height
+  );
+  const b64 = canvas.toDataURL('image/jpeg', 0.82);
+  state._formPhoto = b64;
+  document.getElementById('img-preview').src = b64;
+  document.getElementById('img-preview').classList.add('show');
+  document.getElementById('img-upload-hint').style.display = 'none';
+  document.getElementById('img-upload-area').classList.add('has-image');
+  document.getElementById('img-remove-btn').classList.add('show');
+  closeCrop();
+}
+
+function setupCropDrag() {
+  const box = document.getElementById('crop-box');
+  const container = document.getElementById('crop-container');
+  let startX, startY, startBX, startBY;
+
+  function getXY(e) {
+    const t = e.touches ? e.touches[0] : e;
+    const rect = container.getBoundingClientRect();
+    return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+  }
+
+  function onDown(e) {
+    e.preventDefault();
+    const p = getXY(e);
+    startX = p.x; startY = p.y;
+    startBX = _cropData.boxX; startBY = _cropData.boxY;
+    _cropData.dragging = true;
+  }
+
+  function onMove(e) {
+    if (!_cropData.dragging) return;
+    e.preventDefault();
+    const p = getXY(e);
+    const dx = p.x - startX, dy = p.y - startY;
+    const d = _cropData;
+    d.boxX = Math.max(0, Math.min(d.imgW - d.boxW, startBX + dx));
+    d.boxY = Math.max(0, Math.min(d.imgH - d.boxH, startBY + dy));
+    updateCropBox();
+  }
+
+  function onUp() { _cropData.dragging = false; }
+
+  // Remove old listeners first
+  const newBox = box.cloneNode(true);
+  box.parentNode.replaceChild(newBox, box);
+  newBox.addEventListener('mousedown',  onDown, { passive: false });
+  newBox.addEventListener('touchstart', onDown, { passive: false });
+  container.addEventListener('mousemove',  onMove, { passive: false });
+  container.addEventListener('touchmove',  onMove, { passive: false });
+  container.addEventListener('mouseup',    onUp);
+  container.addEventListener('touchend',   onUp);
 }
 
 function removeImage() {
@@ -2142,6 +2295,10 @@ async function loadCustomCategories() {
     const data = await GET('/api/categories');
     state.customCategories = data.custom || [];
     renderCustomCategories();
+    // Fix1: Refresh category picker in add form with new custom cats
+    if (document.getElementById('form-cat-picker').children.length > 0) {
+      initCatPicker();
+    }
   } catch(e) { state.customCategories = []; }
 }
 
@@ -2224,12 +2381,18 @@ async function deleteCat(id) {
   } catch(e) { showToast('Ошибка'); }
 }
 
+function goBackFromCat() {
+  if (state.fromScreen === 'stats') { showStats(); }
+  else { showHome(); }
+}
+
 function showCatByName(catName, customId) {
-  state.currentCat = catName;
+  state.currentCat   = catName;
   state.currentCatId = customId || null;
+  state.fromScreen   = 'home';
   document.getElementById('cat-title').textContent = catName;
   showScreen('screen-cat');
-  setNavActive(null);
+  setNavActive('nav-home');
   loadCategoryRecords(catName);
 }
 
@@ -2247,6 +2410,8 @@ async function loadReminders() {
     const active   = (activeData.reminders  || []);
     const inactive = (allData.reminders     || []).filter(r => !r.is_active);
     sub.textContent = active.length + ' активных';
+    const clearBtn = document.getElementById('clear-past-btn');
+    if (clearBtn) clearBtn.style.display = inactive.length ? 'block' : 'none';
 
     const now = new Date();
     const MONTHS = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
