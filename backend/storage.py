@@ -130,6 +130,25 @@ async def add_category(user_id: int, name: str, emoji: str, color: str = None) -
         s.add(c); await s.commit(); await s.refresh(c)
         return {"id":c.id,"name":c.name,"emoji":c.emoji,"color":c.color,"topic_id":c.topic_id}
 
+async def get_category(cat_id: str) -> Optional[dict]:
+    async with AsyncSessionLocal() as s:
+        c = (await s.execute(select(Category).where(Category.id == cat_id))).scalar_one_or_none()
+        return {"id":c.id,"name":c.name,"emoji":c.emoji} if c else None
+
+async def delete_records_by_category(user_id: int, category: str) -> int:
+    async with AsyncSessionLocal() as s:
+        try:
+            result = await s.execute(
+                select(Record).where(Record.user_id == user_id, Record.category == category)
+            )
+            records = result.scalars().all()
+            for r in records:
+                await s.delete(r)
+            await s.commit()
+            return len(records)
+        except SQLAlchemyError as e:
+            await s.rollback(); logger.error(e); return 0
+
 async def delete_category(cat_id: str) -> bool:
     async with AsyncSessionLocal() as s:
         try:

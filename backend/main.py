@@ -345,10 +345,24 @@ async def create_category(body: CategoryCreate, request: Request):
 
 @app.delete("/api/categories/{cat_id}")
 async def delete_category(cat_id: str, request: Request):
-    get_user_id(request)
+    user_id = get_user_id(request)
+    # Get category name before deleting
+    cat = await storage.get_category(cat_id)
+    if not cat:
+        raise HTTPException(status_code=404, detail="Not found")
+    cat_name = cat["emoji"] + " " + cat["name"]
+    # Delete all records in this category
+    records = await storage.get_records(user_id=user_id, category=cat_name)
+    for r in records:
+        msg_id = r.get("message_id")
+        if msg_id:
+            try: await bot.delete_message(GROUP_ID, msg_id)
+            except Exception: pass
+    await storage.delete_records_by_category(user_id, cat_name)
+    # Delete the category itself
     ok = await storage.delete_category(cat_id)
     if not ok: raise HTTPException(status_code=404, detail="Not found")
-    return {"ok": True}
+    return {"ok": True, "deleted_records": len(records)}
 
 
 # ────────────────────── Reminders API ────────────────────────────────
