@@ -1426,14 +1426,19 @@ async function showHome() {
   await loadHome();
 }
 
-function showAdd() {
+async function showAdd() {
   setNavActive('nav-add');
   state.editRecord = null;
-  state.currentCat = null;  // Fix4: clear cat so back goes home
+  state.currentCat = null;
   document.getElementById('form-title').textContent = 'Новая заметка';
   document.getElementById('form-submit').textContent = 'Сохранить';
   clearForm();
-  initCatPicker();  // Fix1: rebuild picker with latest custom cats
+  // Await fresh custom categories before building picker
+  try {
+    const data = await GET('/api/categories');
+    state.customCategories = data.custom || [];
+  } catch(e) {}
+  initCatPicker();
   showScreen('screen-form');
 }
 
@@ -2163,25 +2168,29 @@ function handleImageUpload(event) {
 }
 
 function openCrop(src) {
-  const img = document.getElementById('crop-source');
-  img.src = src;
-  img.onload = () => {
-    const container = document.getElementById('crop-container');
-    const iw = img.offsetWidth, ih = img.offsetHeight;
-    _cropData.imgW = iw; _cropData.imgH = ih;
-    // Default box: centered square, 80% size
-    const side = Math.min(iw, ih) * 0.8;
-    _cropData.boxX = (iw - side) / 2;
-    _cropData.boxY = (ih - side) / 2;
-    _cropData.boxW = side;
-    _cropData.boxH = side;
-    updateCropBox();
-    container.style.height = ih + 'px';
-  };
   const ov = document.getElementById('crop-overlay');
   ov.style.opacity = ''; ov.style.pointerEvents = '';
   ov.classList.add('show');
-  setupCropDrag();
+
+  const img = document.getElementById('crop-source');
+  img.src = src;
+  img.onload = () => {
+    // Wait two frames so the overlay is visible and has real dimensions
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const container = document.getElementById('crop-container');
+      const iw = img.offsetWidth || img.naturalWidth;
+      const ih = img.offsetHeight || Math.round(img.naturalHeight * (img.offsetWidth / img.naturalWidth));
+      _cropData.imgW = iw; _cropData.imgH = ih;
+      const side = Math.min(iw, ih) * 0.8;
+      _cropData.boxX = (iw - side) / 2;
+      _cropData.boxY = (ih - side) / 2;
+      _cropData.boxW = side;
+      _cropData.boxH = side;
+      container.style.height = ih + 'px';
+      updateCropBox();
+      setupCropDrag();
+    }));
+  };
 }
 
 function updateCropBox() {
