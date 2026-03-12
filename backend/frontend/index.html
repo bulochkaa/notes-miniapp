@@ -850,6 +850,222 @@
   }
   .cal-confirm-btn:disabled { opacity: .4; cursor: default; }
   .cal-confirm-btn:not(:disabled):active { opacity: .8; }
+
+  /* ── Reminder cards ── */
+  .reminder-card {
+    background: var(--bg2);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    border-left: 3px solid transparent;
+    animation: fadeUp .3s ease both;
+  }
+  .reminder-emoji-badge {
+    font-size: 26px;
+    line-height: 1;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .reminder-info { flex: 1; min-width: 0; }
+  .reminder-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .reminder-cat  { font-size: 12px; color: var(--hint); margin-bottom: 4px; }
+  .reminder-date { font-size: 13px; color: var(--hint); margin-bottom: 2px; }
+  .reminder-repeat { font-size: 12px; color: var(--link); margin-top: 2px; }
+  .reminder-del-btn {
+    background: none;
+    border: none;
+    color: var(--hint);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px;
+    flex-shrink: 0;
+    transition: color .15s;
+  }
+  .reminder-del-btn:active { color: #ff6b6b; }
+  .reminders-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--hint);
+  }
+
+  /* Urgency colors */
+  .reminder-card.urgent  { border-left-color: #ff4d4d; }
+  .reminder-card.warning { border-left-color: #ffd93d; }
+  .reminder-card.ok      { border-left-color: #6bcb77; }
+  .reminder-card.inactive { opacity: .45; }
+  .reminder-date.urgent  { color: #ff6b6b; }
+  .reminder-date.warning { color: #ffd93d; }
+  .reminder-date.ok      { color: #6bcb77; }
+  .reminders-section-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .8px;
+    text-transform: uppercase;
+    color: var(--hint);
+    margin: 12px 0 8px;
+  }
+
+  /* ── Custom categories ── */
+  .custom-cat-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--bg2);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: opacity .15s;
+    animation: fadeUp .3s ease both;
+  }
+  .custom-cat-card:active { opacity: .7; }
+  .custom-cat-emoji {
+    width: 42px; height: 42px;
+    border-radius: 12px;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .custom-cat-del {
+    background: none;
+    border: none;
+    color: var(--hint);
+    font-size: 15px;
+    cursor: pointer;
+    padding: 4px 6px;
+    margin-left: auto;
+    flex-shrink: 0;
+    transition: color .15s;
+  }
+  .custom-cat-del:active { color: #ff6b6b; }
+
+  /* Create category overlay */
+  .create-cat-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.65);
+    z-index: 500;
+    display: flex;
+    align-items: flex-end;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s;
+  }
+  .create-cat-overlay.show { opacity: 1; pointer-events: all; }
+  .create-cat-sheet {
+    width: 100%;
+    background: var(--bg2);
+    border-radius: 20px 20px 0 0;
+    padding: 20px 20px calc(28px + var(--safe-b));
+    transform: translateY(100%);
+    transition: transform .32s cubic-bezier(.32,.72,0,1);
+    max-height: 88vh;
+    overflow-y: auto;
+  }
+  .create-cat-overlay.show .create-cat-sheet { transform: translateY(0); }
+  .create-cat-title {
+    font-size: 17px;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .suggested-cats { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .suggested-cat-btn {
+    background: var(--bg);
+    border: 1.5px solid transparent;
+    border-radius: 20px;
+    padding: 7px 14px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    cursor: pointer;
+    transition: border-color .15s;
+  }
+  .suggested-cat-btn:active { border-color: var(--accent); }
+  .create-cat-divider {
+    text-align: center;
+    color: var(--hint);
+    font-size: 12px;
+    margin: 10px 0 14px;
+  }
+  .cat-emoji-picker { display: flex; flex-wrap: wrap; gap: 8px; }
+  .cat-emoji-opt {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background: var(--bg);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color .15s;
+  }
+  .cat-emoji-opt.selected { border-color: var(--accent); background: var(--accent)1a; }
+
+  /* ── Image upload ── */
+  .img-upload-area {
+    border: 2px dashed rgba(255,255,255,.12);
+    border-radius: var(--radius);
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s;
+  }
+  .img-upload-area:active { border-color: var(--accent); }
+  .img-upload-area.has-image { border-style: solid; border-color: var(--accent); padding: 8px; }
+  .img-preview {
+    width: 100%;
+    max-height: 200px;
+    object-fit: cover;
+    border-radius: 10px;
+    display: none;
+  }
+  .img-preview.show { display: block; }
+  .img-upload-hint { color: var(--hint); font-size: 13px; }
+  .img-upload-hint span { font-size: 28px; display: block; margin-bottom: 6px; }
+  .img-remove-btn {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--hint);
+    font-size: 12px;
+    cursor: pointer;
+    margin-top: 8px;
+    text-decoration: underline;
+    width: 100%;
+    text-align: center;
+  }
+  .img-remove-btn.show { display: block; }
+
+  /* Share button */
+  .share-btn {
+    width: 100%;
+    background: var(--bg2);
+    border: 1.5px solid var(--accent)44;
+    border-radius: var(--radius-sm);
+    color: var(--link);
+    font-family: var(--font);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 12px;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .share-btn:active { background: var(--accent)22; }
 </style>
 </head>
 <body>
@@ -872,6 +1088,11 @@
       <div id="stats-row" class="stats-row"></div>
       <div class="section-label">Категории</div>
       <div class="category-grid" id="cat-grid"></div>
+      <div class="section-label" style="display:flex;align-items:center;justify-content:space-between">
+        <span>Свои категории</span>
+        <button type="button" onclick="openCreateCat()" style="background:var(--accent);border:none;border-radius:20px;color:var(--accent-t);font-family:var(--font);font-size:12px;font-weight:600;padding:4px 12px;cursor:pointer">+ Создать</button>
+      </div>
+      <div id="custom-cats-list"></div>
       <div class="section-label" id="recent-label">Последние</div>
       <div class="records-list" id="recent-list"></div>
     </div>
@@ -934,6 +1155,17 @@
         </div>
       </div>
       <div class="form-group">
+        <label class="form-label">Фото</label>
+        <div class="img-upload-area" id="img-upload-area" onclick="document.getElementById('img-file-input').click()">
+          <img class="img-preview" id="img-preview" src="" alt="">
+          <div class="img-upload-hint" id="img-upload-hint">
+            <span>🖼</span>Нажми чтобы добавить фото
+          </div>
+        </div>
+        <button type="button" class="img-remove-btn" id="img-remove-btn" onclick="removeImage()">✕ Удалить фото</button>
+        <input type="file" id="img-file-input" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
+      </div>
+      <div class="form-group">
         <label class="form-label">Теги <span style="color:var(--hint);text-transform:none;letter-spacing:0;font-weight:400">(через запятую)</span></label>
         <input class="form-input" id="form-tags" placeholder="нуар, 90е, мелодрама">
       </div>
@@ -989,6 +1221,35 @@
 
 </div>
 
+
+
+<!-- Create category overlay -->
+<div class="create-cat-overlay" id="create-cat-overlay">
+  <div class="create-cat-sheet">
+    <div class="create-cat-title">➕ Новая категория</div>
+
+    <div class="suggested-cats" id="suggested-cats"></div>
+
+    <div class="create-cat-divider">или создай свою</div>
+
+    <div class="form-group" style="margin-bottom:12px">
+      <label class="form-label">Название</label>
+      <input class="form-input" id="new-cat-name" placeholder="Моя категория" maxlength="32">
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px">
+      <label class="form-label">Эмодзи</label>
+      <div class="cat-emoji-picker" id="cat-emoji-picker"></div>
+    </div>
+
+    <button type="button" class="btn btn-primary" id="create-cat-btn" style="width:100%;margin-bottom:10px">
+      Создать категорию
+    </button>
+    <button type="button" class="btn btn-ghost" onclick="closeCreateCat()" style="width:100%">
+      Отмена
+    </button>
+  </div>
+</div>
 
 <!-- Calendar overlay -->
 <div class="cal-overlay" id="cal-overlay">
@@ -1104,6 +1365,8 @@ let state = {
   _reminderEmoji:'🔔',
   _formRating:   0,
   _formCat:      null,
+  _formPhoto:    null,
+  customCategories: [],
 };
 
 // Category colors (CSS variable per card)
@@ -1176,12 +1439,14 @@ function showDetail(record) {
 
 // ──────────────────── Load data ────────────────────
 async function loadHome() {
+  loadCustomCategories();
   try {
-    const [{ records }, { by_category, total }, { categories }] = await Promise.all([
+    const [{ records }, { by_category, total }, catsData] = await Promise.all([
       GET('/api/records?limit=6'),
       GET('/api/stats'),
       GET('/api/categories'),
     ]);
+    const categories = catsData.system || catsData.categories || [];
     state.records    = records;
     state.stats      = by_category;
     state.categories = categories;
@@ -1306,6 +1571,7 @@ function renderDetail(record) {
   const color = CAT_COLORS[record.category] || 'var(--accent)';
   let html = '';
 
+  if (record.photo) html += `<img class="detail-photo" src="${record.photo}" alt="">`;
   html += `<div class="detail-cat" style="background:${color}22;color:${color}">${esc(record.category)}</div>`;
   html += `<div class="detail-title">${esc(record.title)}</div>`;
   if (stars) html += `<span class="detail-stars">${stars}</span>`;
@@ -1386,8 +1652,10 @@ function clearForm() {
   document.querySelectorAll('.cat-pick-btn').forEach(b => b.classList.remove('selected'));
   state._formRating  = 0;
   state._formCat     = null;
+  state._formPhoto   = null;
   state._reminderDate  = null;
   state._reminderEmoji = '🔔';
+  removeImage();
 }
 
 function fillFormForEdit(record) {
@@ -1479,7 +1747,8 @@ document.getElementById('form-submit').onclick = async () => {
     } else {
       await POST('/api/records', {
         category: state._formCat, title, description: desc,
-        link: link || null, rating: state._formRating, tags,
+        link: link || null, photo: state._formPhoto || null,
+        rating: state._formRating, tags,
         reminder_date:  state._reminderDate ? state._reminderDate.toISOString() : null,
         reminder_time:  state._reminderTime  || '09:00',
         repeat_type:    state._reminderRepeat || null,
@@ -1796,54 +2065,12 @@ function clearReminder(e) {
 
 // ──────────────────── Reminders Screen ────────────────────
 async function showReminders() {
-  showScreen('screen-reminders');
   setNavActive('nav-reminders');
+  showScreen('screen-reminders');
   await loadReminders();
 }
 
-async function loadReminders() {
-  const sub  = document.getElementById('reminders-sub');
-  const list = document.getElementById('reminders-list');
-  list.innerHTML = '<div class="loader"><div class="spinner"></div> Загрузка…</div>';
-  try {
-    const data = await GET('/api/reminders');
-    const reminders = data.reminders || [];
-    sub.textContent = reminders.length + ' напоминаний';
-
-    if (!reminders.length) {
-      list.innerHTML = `
-        <div class="reminders-empty">
-          <div class="empty-icon">⏰</div>
-          <div>Нет активных напоминаний</div>
-          <div style="margin-top:8px;font-size:12px">Добавь заметку с датой напоминания</div>
-        </div>`;
-      return;
-    }
-
-    const MONTHS = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
-    const repeatLabel = { weekly: '🔁 каждую неделю', monthly: '🔁 каждый месяц' };
-
-    list.innerHTML = reminders.map(r => {
-      const d     = new Date(r.remind_at);
-      const label = d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear();
-      const time  = r.remind_time ? ' в ' + r.remind_time : '';
-      const rep   = r.repeat_type ? '<div class="reminder-repeat">' + (repeatLabel[r.repeat_type] || '') + '</div>' : '';
-      return `
-        <div class="reminder-card">
-          <div class="reminder-emoji-badge">${r.emoji || '🔔'}</div>
-          <div class="reminder-info">
-            <div class="reminder-title">${escHtml(r.record_title)}</div>
-            <div class="reminder-cat">${escHtml(r.record_cat)}</div>
-            <div class="reminder-date">📅 ${label}${time}</div>
-            ${rep}
-          </div>
-          <button class="reminder-del-btn" onclick="deleteReminder('${r.id}')">✕</button>
-        </div>`;
-    }).join('');
-  } catch(e) {
-    list.innerHTML = '<div class="reminders-empty"><div>Ошибка загрузки</div></div>';
-  }
-}
+// old loadReminders removed
 
 async function deleteReminder(id) {
   try {
@@ -1870,6 +2097,208 @@ async function shareRecord(recordId) {
   }
 }
 
+
+// ──────────────────── Image upload ────────────────────
+function handleImageUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { showToast('Фото не больше 5 МБ'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const b64 = e.target.result;
+    state._formPhoto = b64;
+    document.getElementById('img-preview').src = b64;
+    document.getElementById('img-preview').classList.add('show');
+    document.getElementById('img-upload-hint').style.display = 'none';
+    document.getElementById('img-upload-area').classList.add('has-image');
+    document.getElementById('img-remove-btn').classList.add('show');
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeImage() {
+  state._formPhoto = null;
+  document.getElementById('img-preview').src = '';
+  document.getElementById('img-preview').classList.remove('show');
+  document.getElementById('img-upload-hint').style.display = '';
+  document.getElementById('img-upload-area').classList.remove('has-image');
+  document.getElementById('img-remove-btn').classList.remove('show');
+  document.getElementById('img-file-input').value = '';
+}
+
+// ──────────────────── Custom categories ────────────────────
+const SUGGESTED_CATS = [
+  {emoji:'📚',name:'Книги'},{emoji:'✈️',name:'Путешествия'},{emoji:'💪',name:'Спорт'},
+  {emoji:'💊',name:'Здоровье'},{emoji:'💼',name:'Работа'},{emoji:'🎮',name:'Игры'},
+  {emoji:'🛒',name:'Покупки'},{emoji:'🍷',name:'Рестораны'},{emoji:'🎨',name:'Творчество'},
+  {emoji:'💰',name:'Финансы'},{emoji:'🌿',name:'Природа'},{emoji:'🐾',name:'Питомцы'},
+];
+const CAT_EMOJIS = ['📁','📚','✈️','💪','💊','💼','🎮','🛒','🍷','🎨','💰','🌿',
+                    '🐾','🎯','🔬','🎭','🏠','🚗','☀️','🌙','⚽','🎸','🧩','🎪'];
+let _newCatEmoji = '📁';
+
+async function loadCustomCategories() {
+  try {
+    const data = await GET('/api/categories');
+    state.customCategories = data.custom || [];
+    renderCustomCategories();
+  } catch(e) { state.customCategories = []; }
+}
+
+function renderCustomCategories() {
+  const list = document.getElementById('custom-cats-list');
+  if (!list) return;
+  const cats = state.customCategories || [];
+  if (!cats.length) {
+    list.innerHTML = '<div style="color:var(--hint);font-size:13px;padding:4px 0 8px">Нет своих категорий</div>';
+    return;
+  }
+  list.innerHTML = cats.map(cat => `
+    <div class="custom-cat-card" onclick="showCatByName('${esc(cat.emoji + ' ' + cat.name)}','${esc(cat.id)}')">
+      <div class="custom-cat-emoji" style="background:${cat.color || 'var(--bg)'}">
+        ${cat.emoji}
+      </div>
+      <div>
+        <div style="font-weight:600;font-size:15px">${esc(cat.emoji)} ${esc(cat.name)}</div>
+        <div style="font-size:12px;color:var(--hint);margin-top:2px">Своя категория</div>
+      </div>
+      <button type="button" class="custom-cat-del" onclick="event.stopPropagation();deleteCat('${cat.id}')">✕</button>
+    </div>`).join('');
+}
+
+function openCreateCat() {
+  // Fill suggested
+  const sg = document.getElementById('suggested-cats');
+  sg.innerHTML = SUGGESTED_CATS.map(c =>
+    `<button type="button" class="suggested-cat-btn" onclick="pickSuggestedCat('${c.emoji}','${c.name}')">
+      ${c.emoji} ${c.name}
+    </button>`).join('');
+
+  // Fill emoji picker
+  _newCatEmoji = '📁';
+  const ep = document.getElementById('cat-emoji-picker');
+  ep.innerHTML = CAT_EMOJIS.map(e =>
+    `<button type="button" class="cat-emoji-opt${e===_newCatEmoji?' selected':''}" onclick="pickCatEmoji('${e}')">${e}</button>`
+  ).join('');
+
+  document.getElementById('new-cat-name').value = '';
+  const ov = document.getElementById('create-cat-overlay');
+  ov.style.opacity = ''; ov.style.pointerEvents = '';
+  ov.classList.add('show');
+}
+
+function closeCreateCat() {
+  const ov = document.getElementById('create-cat-overlay');
+  ov.classList.remove('show');
+  ov.style.opacity = '0'; ov.style.pointerEvents = 'none';
+}
+
+function pickSuggestedCat(emoji, name) {
+  document.getElementById('new-cat-name').value = name;
+  pickCatEmoji(emoji);
+}
+
+function pickCatEmoji(emoji) {
+  _newCatEmoji = emoji;
+  document.querySelectorAll('.cat-emoji-opt').forEach(b => {
+    b.classList.toggle('selected', b.textContent.trim() === emoji);
+  });
+}
+
+document.getElementById('create-cat-btn').onclick = async () => {
+  const name = document.getElementById('new-cat-name').value.trim();
+  if (!name) { showToast('Введи название'); return; }
+  try {
+    await POST('/api/categories', {name, emoji: _newCatEmoji});
+    showToast('✅ Категория создана!');
+    closeCreateCat();
+    await loadCustomCategories();
+  } catch(e) { showToast('Ошибка создания'); }
+};
+
+async function deleteCat(id) {
+  try {
+    await apiDelete('/api/categories/' + id);
+    showToast('🗑 Категория удалена');
+    await loadCustomCategories();
+  } catch(e) { showToast('Ошибка'); }
+}
+
+function showCatByName(catName, customId) {
+  state.currentCat = catName;
+  state.currentCatId = customId || null;
+  document.getElementById('cat-title').textContent = catName;
+  showScreen('screen-cat');
+  setNavActive(null);
+  loadCategoryRecords(catName);
+}
+
+// ──────────────────── Improved reminders screen ────────────────────
+async function loadReminders() {
+  const sub  = document.getElementById('reminders-sub');
+  const list = document.getElementById('reminders-list');
+  list.innerHTML = '<div class="loader"><div class="spinner"></div> Загрузка…</div>';
+  try {
+    // Load both active and inactive
+    const [activeData, allData] = await Promise.all([
+      GET('/api/reminders'),
+      GET('/api/reminders?include_inactive=true'),
+    ]);
+    const active   = (activeData.reminders  || []);
+    const inactive = (allData.reminders     || []).filter(r => !r.is_active);
+    sub.textContent = active.length + ' активных';
+
+    const now = new Date();
+    const MONTHS = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+    const repeatLabel = {weekly:'🔁 каждую неделю', monthly:'🔁 каждый месяц'};
+
+    function renderCard(r) {
+      const d     = new Date(r.remind_at);
+      const diff  = (d - now) / (1000 * 60 * 60 * 24); // days
+      const label = d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear();
+      const time  = r.remind_time ? ' в ' + r.remind_time : '';
+      const rep   = r.repeat_type ? `<div class="reminder-repeat">${repeatLabel[r.repeat_type]||''}</div>` : '';
+
+      let urgency = 'ok', dateClass = 'ok';
+      if (!r.is_active)   { urgency = 'inactive'; dateClass = ''; }
+      else if (diff <= 2) { urgency = 'urgent';   dateClass = 'urgent'; }
+      else if (diff <= 7) { urgency = 'warning';  dateClass = 'warning'; }
+
+      return `
+        <div class="reminder-card ${urgency}">
+          <div class="reminder-emoji-badge">${r.emoji||'🔔'}</div>
+          <div class="reminder-info">
+            <div class="reminder-title">${escHtml(r.record_title)}</div>
+            <div class="reminder-cat">${escHtml(r.record_cat)}</div>
+            <div class="reminder-date ${dateClass}">📅 ${label}${time}</div>
+            ${rep}
+          </div>
+          ${r.is_active ? `<button type="button" class="reminder-del-btn" onclick="deleteReminder('${r.id}')">✕</button>` : ''}
+        </div>`;
+    }
+
+    let html = '';
+    if (!active.length && !inactive.length) {
+      html = `<div class="reminders-empty">
+        <div class="empty-icon">⏰</div>
+        <div>Нет напоминаний</div>
+        <div style="margin-top:8px;font-size:12px">Добавь заметку с датой напоминания</div>
+      </div>`;
+    } else {
+      if (active.length) {
+        html += '<div class="reminders-section-label">🟢 Активные</div>';
+        html += active.map(renderCard).join('');
+      }
+      if (inactive.length) {
+        html += '<div class="reminders-section-label" style="margin-top:20px">⚫ Прошедшие</div>';
+        html += inactive.map(renderCard).join('');
+      }
+    }
+    list.innerHTML = html;
+  } catch(e) {
+    list.innerHTML = '<div class="reminders-empty"><div>Ошибка загрузки</div></div>';
+  }
+}
 // ──────────────────── Boot ────────────────────
 initCatPicker();
 loadHome();

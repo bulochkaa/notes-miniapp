@@ -181,9 +181,15 @@ class RecordUpdate(BaseModel):
     title:       Optional[str]       = None
     description: Optional[str]       = None
     link:        Optional[str]       = None
+    photo:       Optional[str]       = None
     rating:      Optional[int]       = None
     tags:        Optional[list[str]] = None
 
+
+class CategoryCreate(BaseModel):
+    name:  str
+    emoji: str = "📁"
+    color: Optional[str] = None
 
 class ReminderCreate(BaseModel):
     record_id:    str
@@ -321,16 +327,31 @@ async def get_stats(request: Request):
 
 
 @app.get("/api/categories")
-async def get_categories():
-    return {"categories": list(TOPICS.keys())}
+async def get_categories(request: Request):
+    user_id = get_user_id(request)
+    custom = await storage.get_categories(user_id)
+    return {"system": list(TOPICS.keys()), "custom": custom}
+
+@app.post("/api/categories", status_code=201)
+async def create_category(body: CategoryCreate, request: Request):
+    user_id = get_user_id(request)
+    cat = await storage.add_category(user_id, body.name, body.emoji, body.color)
+    return cat
+
+@app.delete("/api/categories/{cat_id}")
+async def delete_category(cat_id: str, request: Request):
+    get_user_id(request)
+    ok = await storage.delete_category(cat_id)
+    if not ok: raise HTTPException(status_code=404, detail="Not found")
+    return {"ok": True}
 
 
 # ────────────────────── Reminders API ────────────────────────────────
 
 @app.get("/api/reminders")
-async def list_reminders(request: Request):
+async def list_reminders(request: Request, include_inactive: bool = Query(False)):
     user_id = get_user_id(request)
-    reminders = await storage.get_reminders(user_id)
+    reminders = await storage.get_reminders(user_id, include_inactive=include_inactive)
     return {"reminders": reminders}
 
 
