@@ -1621,25 +1621,27 @@ let _calSelected  = null;         // selected Date object
 let _calEmoji     = '🔔';
 
 function openCalendar() {
-  try {
-    _calDate     = new Date();
-    _calSelected = state._reminderDate || null;
-    _calEmoji    = state._reminderEmoji || '🔔';
-    const overlay = document.getElementById('cal-overlay');
-    if (!overlay) { alert('overlay not found!'); return; }
-    renderCalendar();
-    renderEmojiGrid();
-    overlay.classList.add('show');
-    // Force show
-    overlay.style.opacity = '1';
-    overlay.style.pointerEvents = 'all';
-  } catch(e) {
-    alert('Calendar error: ' + e.message);
-  }
+  _calDate     = new Date();
+  _calSelected = state._reminderDate || null;
+  _calEmoji    = state._reminderEmoji || '🔔';
+  // Reset time/repeat to current state
+  const timeEl = document.getElementById('cal-time');
+  const repEl  = document.getElementById('cal-repeat');
+  if (timeEl) timeEl.value   = state._reminderTime   || '09:00';
+  if (repEl)  repEl.value    = state._reminderRepeat || '';
+  renderCalendar();
+  renderEmojiGrid();
+  const overlay = document.getElementById('cal-overlay');
+  overlay.style.opacity       = '';
+  overlay.style.pointerEvents = '';
+  overlay.classList.add('show');
 }
 
 function closeCalendar() {
-  document.getElementById('cal-overlay').classList.remove('show');
+  const overlay = document.getElementById('cal-overlay');
+  overlay.classList.remove('show');
+  overlay.style.opacity       = '';
+  overlay.style.pointerEvents = '';
 }
 
 function renderCalendar() {
