@@ -1131,6 +1131,10 @@
       <div class="form-group">
         <label class="form-label">Категория</label>
         <div class="cat-picker" id="form-cat-picker"></div>
+        <div id="form-custom-cats-wrap" style="display:none;margin-top:8px">
+          <div style="font-size:11px;font-weight:600;color:var(--hint);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Свои категории</div>
+          <div class="cat-picker" id="form-custom-cat-picker"></div>
+        </div>
       </div>
       <div class="form-group">
         <label class="form-label">Название *</label>
@@ -1744,28 +1748,43 @@ async function editRecord(id) {
 }
 
 // ──────────────────── Init category picker ────────────────────
+function makeCatBtn(cat) {
+  const btn = document.createElement('button');
+  btn.type        = 'button';
+  btn.className   = 'cat-pick-btn';
+  btn.dataset.cat = cat;
+  btn.textContent = cat;
+  btn.onclick = () => {
+    document.querySelectorAll('.cat-pick-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    state._formCat = cat;
+  };
+  return btn;
+}
+
 function initCatPicker() {
   const picker = document.getElementById('form-cat-picker');
   picker.innerHTML = '';
   const systemCats = [
-    '🎬 Фильмы', '🍳 Рецепты', '🎵 Музыка',
-    '🎁 Подарки', '👕 Одежда',  '📍 Интересные места'
+    '\u{1F3AC} \u0424\u0438\u043B\u044C\u043C\u044B',
+    '\u{1F373} \u0420\u0435\u0446\u0435\u043F\u0442\u044B',
+    '\u{1F3B5} \u041C\u0443\u0437\u044B\u043A\u0430',
+    '\u{1F381} \u041F\u043E\u0434\u0430\u0440\u043A\u0438',
+    '\u{1F455} \u041E\u0434\u0435\u0436\u0434\u0430',
+    '\u{1F4CD} \u0418\u043D\u0442\u0435\u0440\u0435\u0441\u043D\u044B\u0435 \u043C\u0435\u0441\u0442\u0430'
   ];
-  const customCats = (state.customCategories || []).map(c => c.emoji + ' ' + c.name);
-  const allCats = [...systemCats, ...customCats];
-  allCats.forEach(cat => {
-    const btn = document.createElement('button');
-    btn.type          = 'button';
-    btn.className     = 'cat-pick-btn';
-    btn.dataset.cat   = cat;
-    btn.textContent   = cat;
-    btn.onclick = () => {
-      document.querySelectorAll('.cat-pick-btn').forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      state._formCat = cat;
-    };
-    picker.appendChild(btn);
-  });
+  systemCats.forEach(cat => picker.appendChild(makeCatBtn(cat)));
+
+  const customCats = state.customCategories || [];
+  const wrap   = document.getElementById('form-custom-cats-wrap');
+  const custom = document.getElementById('form-custom-cat-picker');
+  if (customCats.length) {
+    custom.innerHTML = '';
+    customCats.forEach(c => custom.appendChild(makeCatBtn(c.emoji + ' ' + c.name)));
+    wrap.style.display = 'block';
+  } else {
+    wrap.style.display = 'none';
+  }
 }
 
 // ──────────────────── Star picker ────────────────────
