@@ -1118,14 +1118,17 @@ const CAT_COLORS = {
 
 // ──────────────────── Navigation ────────────────────
 function showScreen(id) {
+  const next = document.getElementById(id);
+  if (!next) return;
+  // If already active — do nothing
+  if (next.classList.contains('active')) return;
   document.querySelectorAll('.screen.active').forEach(s => {
     s.classList.add('slide-out');
     setTimeout(() => s.classList.remove('active', 'slide-out'), 260);
   });
-  const next = document.getElementById(id);
   next.classList.add('active');
   next.style.transform = 'translateX(24px)';
-  requestAnimationFrame(() => next.style.transform = '');
+  requestAnimationFrame(() => { next.style.transform = ''; });
 }
 
 function setNavActive(id) {
@@ -1134,7 +1137,7 @@ function setNavActive(id) {
   if (btn) btn.classList.add('active');
 }
 
-async function showHome() {
+async async function showHome() {
   setNavActive('nav-home');
   showScreen('screen-home');
   await loadHome();
@@ -1149,7 +1152,7 @@ function showAdd() {
   showScreen('screen-form');
 }
 
-async function showStats() {
+async async function showStats() {
   setNavActive('nav-stats');
   showScreen('screen-stats');
   await loadStats();
@@ -1566,9 +1569,17 @@ document.getElementById('search-input').addEventListener('input', e => {
 });
 
 document.getElementById('search-clear').onclick = () => {
-  document.getElementById('search-input').value = '';
+  const inp = document.getElementById('search-input');
+  inp.value = '';
+  document.getElementById('search-clear').style.display = 'none';
+  document.getElementById('recent-label').style.display = '';
   loadHome();
 };
+
+document.getElementById('search-input').addEventListener('input', function() {
+  const hasTxt = this.value.length > 0;
+  document.getElementById('search-clear').style.display = hasTxt ? 'block' : 'none';
+});
 
 // ──────────────────── Helpers ────────────────────
 function esc(s) {
@@ -1772,7 +1783,7 @@ function clearReminder(e) {
 
 
 // ──────────────────── Reminders Screen ────────────────────
-async function showReminders() {
+async async function showReminders() {
   switchScreen('reminders');
   setNavActive('nav-reminders');
   await loadReminders();
