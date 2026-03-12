@@ -1137,7 +1137,7 @@ function setNavActive(id) {
   if (btn) btn.classList.add('active');
 }
 
-async async function showHome() {
+async function showHome() {
   setNavActive('nav-home');
   showScreen('screen-home');
   await loadHome();
@@ -1152,7 +1152,7 @@ function showAdd() {
   showScreen('screen-form');
 }
 
-async async function showStats() {
+async function showStats() {
   setNavActive('nav-stats');
   showScreen('screen-stats');
   await loadStats();
@@ -1783,7 +1783,7 @@ function clearReminder(e) {
 
 
 // ──────────────────── Reminders Screen ────────────────────
-async async function showReminders() {
+async function showReminders() {
   switchScreen('reminders');
   setNavActive('nav-reminders');
   await loadReminders();
