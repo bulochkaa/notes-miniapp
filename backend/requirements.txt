@@ -6,4 +6,4 @@ aiofiles==23.2.1
 python-multipart==0.0.12
 pydantic==2.8.2
 asyncpg==0.30.0
-sqlalchemy[asyncio]==2.0.30
+sqlalchemy[asyncio]==2.0.36
