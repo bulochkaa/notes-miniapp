@@ -1634,14 +1634,15 @@ function openCalendar() {
   const overlay = document.getElementById('cal-overlay');
   overlay.style.opacity       = '';
   overlay.style.pointerEvents = '';
+  void overlay.offsetHeight; // force reflow
   overlay.classList.add('show');
 }
 
 function closeCalendar() {
   const overlay = document.getElementById('cal-overlay');
   overlay.classList.remove('show');
-  overlay.style.opacity       = '';
-  overlay.style.pointerEvents = '';
+  overlay.style.opacity       = '0';
+  overlay.style.pointerEvents = 'none';
 }
 
 function renderCalendar() {
