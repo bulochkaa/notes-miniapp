@@ -18,14 +18,27 @@ async def add_record(record: dict) -> str:
             message_id=record.get('message_id'))
         s.add(r); await s.commit(); await s.refresh(r); return r.id
 
-async def get_records(user_id=None, category=None, query=None, limit=100, offset=0):
+async def get_records(user_id=None, category=None, query=None,
+                      limit=100, offset=0, include_archived=False,
+                      sort='date', tag_filter=None):
     async with AsyncSessionLocal() as s:
-        stmt = select(Record).order_by(Record.created_at.desc())
+        stmt = select(Record)
         if user_id  is not None: stmt = stmt.where(Record.user_id == user_id)
         if category: stmt = stmt.where(Record.category == category)
+        if not include_archived:
+            stmt = stmt.where((Record.is_archived == False) | (Record.is_archived == None))
         if query:
             q = f"%{query.lower()}%"
             stmt = stmt.where(or_(func.lower(Record.title).like(q), func.lower(Record.description).like(q)))
+        if tag_filter:
+            stmt = stmt.where(Record.tags.contains([tag_filter]))
+        # Sorting
+        if sort == 'rating':
+            stmt = stmt.order_by(Record.rating.desc(), Record.created_at.desc())
+        elif sort == 'title':
+            stmt = stmt.order_by(Record.title)
+        else:
+            stmt = stmt.order_by(Record.created_at.desc())
         stmt = stmt.offset(offset).limit(limit)
         return [_r(r) for r in (await s.execute(stmt)).scalars().all()]
 
@@ -48,17 +61,38 @@ async def delete_record(rid: str) -> Optional[dict]:
         if not r: return None
         d = _r(r); await s.delete(r); await s.commit(); return d
 
+async def archive_record(rid: str, archived: bool) -> bool:
+    return await update_record(rid, {'is_archived': archived})
+
 async def get_stats(user_id=None) -> dict:
     async with AsyncSessionLocal() as s:
-        stmt = select(Record.category, func.count(Record.id))
+        stmt = select(Record.category, func.count(Record.id)).where(
+            (Record.is_archived == False) | (Record.is_archived == None)
+        )
         if user_id is not None: stmt = stmt.where(Record.user_id == user_id)
         by_cat = {row[0]: row[1] for row in (await s.execute(stmt.group_by(Record.category))).all()}
         return {"by_category": by_cat, "total": sum(by_cat.values())}
+
+async def get_all_tags(user_id: int) -> list:
+    """Return sorted unique tags used by user across all records."""
+    async with AsyncSessionLocal() as s:
+        stmt = select(Record.tags).where(Record.user_id == user_id,
+            (Record.is_archived == False) | (Record.is_archived == None))
+        rows = (await s.execute(stmt)).scalars().all()
+        all_tags = set()
+        for tags in rows:
+            if tags:
+                all_tags.update(tags)
+        return sorted(all_tags)
+
+async def export_records(user_id: int) -> list[dict]:
+    return await get_records(user_id=user_id, limit=10000, include_archived=True)
 
 def _r(r: Record) -> dict:
     return {"id":r.id,"user_id":r.user_id,"category":r.category,"title":r.title,
             "description":r.description,"link":r.link,"photo":r.photo,
             "rating":r.rating,"tags":r.tags or [],"message_id":r.message_id,
+            "is_archived": bool(r.is_archived),
             "created_at":r.created_at.isoformat() if r.created_at else ""}
 
 # ── Reminders ────────────────────────────────────────────────────────
@@ -89,7 +123,6 @@ async def get_reminders(user_id: int, include_inactive=False) -> list[dict]:
 
 async def delete_reminder(rid: str) -> bool:
     async with AsyncSessionLocal() as s:
-        # Soft delete - mark inactive
         try:
             await s.execute(update(Reminder).where(Reminder.id == rid).values(is_active=False))
             await s.commit(); return True
@@ -154,7 +187,7 @@ async def add_category(user_id: int, name: str, emoji: str, color: str = None) -
 async def get_category(cat_id: str) -> Optional[dict]:
     async with AsyncSessionLocal() as s:
         c = (await s.execute(select(Category).where(Category.id == cat_id))).scalar_one_or_none()
-        return {"id":c.id,"name":c.name,"emoji":c.emoji} if c else None
+        return {"id":c.id,"name":c.name,"emoji":c.emoji,"color":c.color} if c else None
 
 async def delete_records_by_category(user_id: int, category: str) -> int:
     async with AsyncSessionLocal() as s:

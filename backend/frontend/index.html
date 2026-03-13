@@ -1066,6 +1066,149 @@
     transition: background .15s;
   }
   .share-btn:active { background: var(--accent)22; }
+
+  /* ── Theme toggle ── */
+  body.light-theme {
+    --bg:  #f4f4f8;
+    --bg2: #ffffff;
+    --text: #1a1a2e;
+    --hint: #8888a0;
+    --accent: #6c63ff;
+    --link:  #4c44cc;
+  }
+  .theme-btn {
+    background: var(--bg2);
+    border: none;
+    border-radius: 50%;
+    width: 36px; height: 36px;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* ── Sort/filter bar ── */
+  .sort-bar {
+    display: flex;
+    gap: 6px;
+    padding: 0 16px 10px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .sort-bar::-webkit-scrollbar { display: none; }
+  .sort-chip {
+    flex-shrink: 0;
+    background: var(--bg2);
+    border: 1.5px solid transparent;
+    border-radius: 20px;
+    color: var(--hint);
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: border-color .15s, color .15s;
+  }
+  .sort-chip.active { border-color: var(--accent); color: var(--accent); background: var(--accent)1a; }
+
+  /* ── Fullscreen photo ── */
+  #photo-fs {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.95);
+    z-index: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s;
+  }
+  #photo-fs.show { opacity: 1; pointer-events: all; }
+  #photo-fs img { max-width: 100%; max-height: 100vh; object-fit: contain; }
+  #photo-fs-close {
+    position: absolute;
+    top: 16px; right: 16px;
+    background: rgba(255,255,255,.15);
+    border: none; color: #fff;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* ── Tag autocomplete ── */
+  .tag-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+    min-height: 0;
+  }
+  .tag-sug-btn {
+    background: var(--accent)1a;
+    border: 1.5px solid var(--accent)44;
+    border-radius: 16px;
+    color: var(--link);
+    font-family: var(--font);
+    font-size: 12px;
+    padding: 3px 10px;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .tag-sug-btn:active { background: var(--accent)33; }
+
+  /* ── Color picker ── */
+  .color-picker { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .color-dot {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: transform .15s, border-color .15s;
+    flex-shrink: 0;
+  }
+  .color-dot:active { transform: scale(.88); }
+  .color-dot.selected { border-color: var(--text); transform: scale(1.1); }
+
+  /* ── Archive badge ── */
+  .archived-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(255,180,0,.15);
+    color: #ffb400;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+  }
+
+  /* ── Similar records ── */
+  .similar-card {
+    background: var(--bg2);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: opacity .15s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .similar-card:active { opacity: .7; }
+  .similar-thumb {
+    width: 40px; height: 40px;
+    border-radius: 8px;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: var(--bg);
+  }
+  .similar-info { flex: 1; min-width: 0; }
+  .similar-title { font-size: 13px; font-weight: 600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .similar-meta { font-size: 11px; color: var(--hint); margin-top: 2px; }
 </style>
 </head>
 <body>
@@ -1074,10 +1217,12 @@
   <!-- ════════════ SCREEN: Home ════════════ -->
   <div class="screen active" id="screen-home">
     <div class="header">
-      <div>
+      <div style="flex:1">
         <div class="header-title">📓 Заметки</div>
         <div class="header-sub" id="home-sub">Загрузка…</div>
       </div>
+      <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Сменить тему">🌙</button>
+      <button class="theme-btn" onclick="exportRecords()" title="Экспорт CSV" style="font-size:15px">📥</button>
     </div>
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
@@ -1102,10 +1247,16 @@
   <div class="screen" id="screen-cat">
     <div class="header">
       <button class="back-btn" id="cat-back" onclick="goBackFromCat()">←</button>
-      <div>
+      <div style="flex:1">
         <div class="header-title" id="cat-title">Категория</div>
         <div class="header-sub" id="cat-sub"></div>
       </div>
+    </div>
+    <div class="sort-bar" id="sort-bar">
+      <button type="button" class="sort-chip active" data-sort="date" onclick="setSortFilter('date',this)">🕐 По дате</button>
+      <button type="button" class="sort-chip" data-sort="rating" onclick="setSortFilter('rating',this)">⭐ По рейтингу</button>
+      <button type="button" class="sort-chip" data-sort="title" onclick="setSortFilter('title',this)">🔤 По названию</button>
+      <div id="tag-filter-chips"></div>
     </div>
     <div class="scroll-area">
       <div class="records-list" id="cat-records"></div>
@@ -1171,7 +1322,8 @@
       </div>
       <div class="form-group">
         <label class="form-label">Теги <span style="color:var(--hint);text-transform:none;letter-spacing:0;font-weight:400">(через запятую)</span></label>
-        <input class="form-input" id="form-tags" placeholder="нуар, 90е, мелодрама">
+        <input class="form-input" id="form-tags" placeholder="нуар, 90е, мелодрама" oninput="showTagSuggestions()" onfocus="showTagSuggestions()">
+        <div class="tag-suggestions" id="tag-suggestions"></div>
       </div>
       <div class="form-group">
         <label class="form-label">Напоминание</label>
@@ -1247,6 +1399,11 @@
     <div class="form-group" style="margin-bottom:12px">
       <label class="form-label">Эмодзи</label>
       <div class="cat-emoji-picker" id="cat-emoji-picker"></div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:16px">
+      <label class="form-label">Цвет</label>
+      <div class="color-picker" id="cat-color-picker"></div>
     </div>
 
     <button type="button" class="btn btn-primary" id="create-cat-btn" style="width:100%;margin-bottom:10px">
@@ -1350,6 +1507,12 @@
       Отмена
     </button>
   </div>
+</div>
+
+<!-- Fullscreen photo -->
+<div id="photo-fs">
+  <button id="photo-fs-close" onclick="closePhotoFS()">✕</button>
+  <img id="photo-fs-img" src="" alt="">
 </div>
 
 <!-- Toast -->
@@ -1604,17 +1767,22 @@ function renderRecentList(records) {
 
 function recordCard(record) {
   const div = document.createElement('div');
-  div.className = 'record-card';
+  div.className = 'record-card' + (record.photo ? ' has-photo' : '');
 
   const stars    = record.rating ? '⭐'.repeat(record.rating) : '';
   const tagsStr  = record.tags?.map(t => '#' + t).join(' ') || '';
   const dateStr  = formatDate(record.created_at);
   const catColor = CAT_COLORS[record.category] || 'var(--accent)';
   const emoji    = record.category?.split(' ')[0] || '';
+  const archBadge = record.is_archived ? '<span style="font-size:11px;color:#ffb400">📦 Архив · </span>' : '';
 
-  div.innerHTML = `
+  let inner = '';
+  if (record.photo) {
+    inner += `<img class="record-thumb" src="${record.photo}" alt="">`;
+  }
+  inner += `
     <div class="record-body">
-      <div class="record-cat-badge" style="color:${catColor}">${emoji} ${record.category?.slice(emoji.length+1)}</div>
+      <div class="record-cat-badge" style="color:${catColor}">${archBadge}${emoji} ${record.category?.slice(emoji.length+1)}</div>
       <div class="record-title">${esc(record.title)}</div>
       <div class="record-desc">${esc(record.description)}</div>
       <div class="record-meta">
@@ -1622,8 +1790,8 @@ function recordCard(record) {
         ${tagsStr ? `<span class="record-tags">${esc(tagsStr)}</span>` : ''}
         <span class="record-date">${dateStr}</span>
       </div>
-    </div>
-  `;
+    </div>`;
+  div.innerHTML = inner;
   div.onclick = () => showDetail(record);
   return div;
 }
@@ -1633,7 +1801,14 @@ function renderDetail(record) {
   const color = CAT_COLORS[record.category] || 'var(--accent)';
   let html = '';
 
-  if (record.photo) html += `<img class="detail-photo" src="${record.photo}" alt="">`;
+  if (record.photo) {
+    html += `<img class="detail-photo" src="${record.photo}" alt=""
+      onclick="openPhotoFS('${record.photo.replace(/'/g,'&apos;')}')"
+      style="cursor:zoom-in" title="Нажми для увеличения">`;
+  }
+
+  if (record.is_archived) html += `<div class="archived-badge">📦 В архиве</div>`;
+
   html += `<div class="detail-cat" style="background:${color}22;color:${color}">${esc(record.category)}</div>`;
   html += `<div class="detail-title">${esc(record.title)}</div>`;
   if (stars) html += `<span class="detail-stars">${stars}</span>`;
@@ -1654,22 +1829,67 @@ function renderDetail(record) {
   if (record.tags?.length) {
     html += `<div class="detail-block">
       <div class="detail-block-label">Теги</div>
-      <div class="detail-tags">${record.tags.map(t => `<span class="tag-pill">#${esc(t)}</span>`).join('')}</div>
+      <div class="detail-tags">${record.tags.map(t => `<span class="tag-pill" style="cursor:pointer" onclick="filterByCatTag('${esc(record.category)}','${esc(t)}')">#${esc(t)}</span>`).join('')}</div>
     </div>`;
   }
 
+  // Action buttons row
   html += `<div style="padding:0 0 8px">
     <button class="share-btn" onclick="shareRecord('${record.id}')">
-      📤 Поделиться — отправить карточку в Telegram
+      📤 Поделиться в Telegram
     </button>
   </div>`;
+
+  // Archive / duplicate row
+  const archLabel = record.is_archived ? '📤 Разархивировать' : '📦 В архив';
+  const archFn    = record.is_archived ? `unarchiveRecord('${record.id}')` : `archiveRecord('${record.id}')`;
+  html += `<div style="display:flex;gap:8px;margin-bottom:8px">
+    <button class="btn btn-ghost" style="flex:1;font-size:13px" onclick="${archFn}">${archLabel}</button>
+    <button class="btn btn-ghost" style="flex:1;font-size:13px" onclick="duplicateRecord('${record.id}')">📋 Копия</button>
+  </div>`;
+
   html += `<div class="detail-actions">
     <button class="btn btn-ghost" onclick="editRecord('${record.id}')">✏️ Изменить</button>
     <button class="btn btn-danger" onclick="confirmDelete('${record.id}', '${esc(record.title)}')">🗑</button>
   </div>`;
 
+  // Similar records section — loaded async after render
+  html += `<div id="similar-section"></div>`;
+
   document.getElementById('detail-content').innerHTML = html;
   document.querySelector('#detail-content').dataset.recordId = record.id;
+
+  // Load similar async
+  loadSimilar(record);
+}
+
+async function loadSimilar(record) {
+  try {
+    const { records } = await GET(\`/api/records?category=\${encodeURIComponent(record.category)}&limit=10\`);
+    const similar = records.filter(r => r.id !== record.id).slice(0, 4);
+    if (!similar.length) return;
+    let html = \`<div class="section-label" style="margin-top:20px">Похожие</div><div style="display:flex;flex-direction:column;gap:8px">\`;
+    similar.forEach(r => {
+      const thumb = r.photo ? \`<img class="similar-thumb" src="\${r.photo}" alt="">\` : \`<div class="similar-thumb" style="display:flex;align-items:center;justify-content:center;font-size:20px">\${r.category?.split(' ')[0]||'📌'}</div>\`;
+      html += \`<div class="similar-card" onclick='showDetailById("\${r.id}")'>
+        \${thumb}
+        <div class="similar-info">
+          <div class="similar-title">\${esc(r.title)}</div>
+          <div class="similar-meta">\${r.rating ? '⭐'.repeat(r.rating) : ''} \${formatDate(r.created_at)}</div>
+        </div>
+      </div>\`;
+    });
+    html += '</div>';
+    const sec = document.getElementById('similar-section');
+    if (sec) sec.innerHTML = html;
+  } catch(e) {}
+}
+
+async function showDetailById(id) {
+  try {
+    const record = await GET('/api/records/' + id);
+    renderDetail(record);
+  } catch(e) { showToast(e.message); }
 }
 
 function renderStatsScreen(by_cat, total) {
@@ -1738,6 +1958,19 @@ function fillFormForEdit(record) {
   document.querySelectorAll('.star-btn').forEach(b => {
     b.classList.toggle('active', +b.dataset.v <= record.rating);
   });
+
+  // Load existing photo into edit form
+  if (record.photo) {
+    state._formPhoto = record.photo;
+    document.getElementById('img-preview').src = record.photo;
+    document.getElementById('img-preview').classList.add('show');
+    document.getElementById('img-upload-hint').style.display = 'none';
+    document.getElementById('img-upload-area').classList.add('has-image');
+    document.getElementById('img-remove-btn').classList.add('show');
+  } else {
+    removeImage();
+  }
+
   showScreen('screen-form');
 }
 
@@ -1821,6 +2054,7 @@ document.getElementById('form-submit').onclick = async () => {
     if (state.editRecord) {
       await PUT(`/api/records/${state.editRecord.id}`, {
         title, description: desc, link: link || null,
+        photo: state._formPhoto || null,
         rating: state._formRating, tags,
       });
       showToast('✅ Запись обновлена!');
@@ -2391,6 +2625,8 @@ function openCreateCat() {
   ).join('');
 
   document.getElementById('new-cat-name').value = '';
+  _newCatColor = null;
+  initColorPicker();
   const ov = document.getElementById('create-cat-overlay');
   ov.style.opacity = ''; ov.style.pointerEvents = '';
   ov.classList.add('show');
@@ -2418,7 +2654,7 @@ document.getElementById('create-cat-btn').onclick = async () => {
   const name = document.getElementById('new-cat-name').value.trim();
   if (!name) { showToast('Введи название'); return; }
   try {
-    await POST('/api/categories', {name, emoji: _newCatEmoji});
+    await POST('/api/categories', {name, emoji: _newCatEmoji, color: _newCatColor});
     showToast('✅ Категория создана!');
     closeCreateCat();
     await loadCustomCategories();
@@ -2516,8 +2752,208 @@ async function loadReminders() {
     list.innerHTML = '<div class="reminders-empty"><div>Ошибка загрузки</div></div>';
   }
 }
+// ──────────────────── Theme toggle ────────────────────
+let _isDark = true;
+function toggleTheme() {
+  _isDark = !_isDark;
+  document.body.classList.toggle('light-theme', !_isDark);
+  document.getElementById('theme-btn').textContent = _isDark ? '🌙' : '☀️';
+  localStorage.setItem('theme', _isDark ? 'dark' : 'light');
+}
+(function initTheme() {
+  try {
+    const t = localStorage.getItem('theme');
+    if (t === 'light') { _isDark = false; document.body.classList.add('light-theme'); document.getElementById('theme-btn').textContent = '☀️'; }
+  } catch(e) {}
+})();
+
+// ──────────────────── Photo fullscreen ────────────────────
+function openPhotoFS(src) {
+  document.getElementById('photo-fs-img').src = src;
+  document.getElementById('photo-fs').classList.add('show');
+  if (tg) tg.BackButton?.show();
+}
+function closePhotoFS() {
+  document.getElementById('photo-fs').classList.remove('show');
+}
+document.getElementById('photo-fs').addEventListener('click', e => {
+  if (e.target === e.currentTarget || e.target === document.getElementById('photo-fs-img')) closePhotoFS();
+});
+
+// ──────────────────── Sort & filter in category ────────────────────
+let _catSort = 'date', _catTagFilter = null;
+
+function setSortFilter(sort, btn) {
+  _catSort = sort;
+  document.querySelectorAll('.sort-chip[data-sort]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadCategoryRecords(state.currentCat);
+}
+
+function filterByCatTag(cat, tag) {
+  _catTagFilter = tag;
+  showCat(cat);
+  // Highlight the active tag chip after load
+  setTimeout(() => renderTagFilterChips(), 400);
+}
+
+function renderTagFilterChips() {
+  const wrap = document.getElementById('tag-filter-chips');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  if (!_catTagFilter) return;
+  const chip = document.createElement('button');
+  chip.type = 'button';
+  chip.className = 'sort-chip active';
+  chip.style.cssText = 'background:var(--accent)1a;color:var(--accent);border-color:var(--accent)';
+  chip.textContent = '#' + _catTagFilter + ' ✕';
+  chip.onclick = () => { _catTagFilter = null; wrap.innerHTML = ''; loadCategoryRecords(state.currentCat); };
+  wrap.appendChild(chip);
+}
+
+// Override loadCategoryRecords to support sort/filter
+async function loadCategoryRecords(cat) {
+  document.getElementById('cat-records').innerHTML = loaderHTML();
+  let url = `/api/records?category=${encodeURIComponent(cat)}&limit=100&sort=${_catSort}`;
+  if (_catTagFilter) url += `&tag_filter=${encodeURIComponent(_catTagFilter)}`;
+  try {
+    const { records, count } = await GET(url);
+    let sub = `${count} заметок`;
+    if (_catTagFilter) sub += ` · #${_catTagFilter}`;
+    document.getElementById('cat-sub').textContent = sub;
+    renderTagFilterChips();
+    if (!records.length) {
+      document.getElementById('cat-records').innerHTML = emptyHTML('📭', 'Пусто', 'В этой категории нет заметок.');
+      return;
+    }
+    document.getElementById('cat-records').innerHTML = '';
+    records.forEach((r, i) => {
+      const el = recordCard(r);
+      el.style.animationDelay = `${i * 40}ms`;
+      document.getElementById('cat-records').appendChild(el);
+    });
+  } catch(e) { showToast(e.message); }
+}
+
+// Reset sort/filter when entering cat
+const _origShowCat = showCat;
+function showCat(cat) {
+  _catSort = 'date';
+  // reset chip UI
+  setTimeout(() => {
+    document.querySelectorAll('.sort-chip[data-sort]').forEach((b,i) => b.classList.toggle('active', i===0));
+  }, 50);
+  state.currentCat  = cat;
+  state.fromScreen  = 'home';
+  setNavActive('nav-home');
+  document.getElementById('cat-title').textContent = cat;
+  showScreen('screen-cat');
+  loadCategoryRecords(cat);
+}
+
+// ──────────────────── Tag autocomplete ────────────────────
+let _allTags = [];
+async function preloadTags() {
+  try {
+    const { tags } = await GET('/api/tags');
+    _allTags = tags || [];
+  } catch(e) {}
+}
+
+function showTagSuggestions() {
+  const input = document.getElementById('form-tags');
+  const wrap  = document.getElementById('tag-suggestions');
+  if (!input || !wrap) return;
+  const parts  = input.value.split(',');
+  const prefix = parts[parts.length - 1].trim().toLowerCase();
+  const used   = parts.slice(0,-1).map(t => t.trim().toLowerCase());
+  const matches = _allTags.filter(t => t.toLowerCase().startsWith(prefix) && !used.includes(t.toLowerCase()) && prefix.length > 0);
+  if (!matches.length) { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = matches.slice(0,8).map(t =>
+    `<button type="button" class="tag-sug-btn" onclick="appendTag('${esc(t)}')">#${esc(t)}</button>`
+  ).join('');
+}
+
+function appendTag(tag) {
+  const input = document.getElementById('form-tags');
+  const parts = input.value.split(',').map(t => t.trim()).filter(Boolean);
+  if (parts.length) parts[parts.length - 1] = tag;
+  else parts.push(tag);
+  input.value = parts.join(', ') + ', ';
+  document.getElementById('tag-suggestions').innerHTML = '';
+  input.focus();
+}
+
+// ──────────────────── Archive / Duplicate ────────────────────
+async function archiveRecord(id) {
+  try {
+    await POST('/api/records/' + id + '/archive', {});
+    showToast('📦 Перемещено в архив');
+    const rec = await GET('/api/records/' + id);
+    renderDetail(rec);
+  } catch(e) { showToast('Ошибка'); }
+}
+
+async function unarchiveRecord(id) {
+  try {
+    await POST('/api/records/' + id + '/unarchive', {});
+    showToast('📤 Восстановлено из архива');
+    const rec = await GET('/api/records/' + id);
+    renderDetail(rec);
+  } catch(e) { showToast('Ошибка'); }
+}
+
+async function duplicateRecord(id) {
+  try {
+    const result = await POST('/api/records/' + id + '/duplicate', {});
+    showToast('📋 Копия создана!');
+    if (tg) tg.HapticFeedback?.notificationOccurred('success');
+    const rec = await GET('/api/records/' + result.id);
+    showDetail(rec);
+  } catch(e) { showToast('Ошибка'); }
+}
+
+// ──────────────────── Export CSV ────────────────────
+async function exportRecords() {
+  try {
+    showToast('⏳ Экспортирую…');
+    const init = tg?.initData || '';
+    const res = await fetch('/api/export?fmt=csv', { headers: { 'X-Init-Data': init } });
+    if (!res.ok) throw new Error();
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = 'notes_export.csv'; a.click();
+    URL.revokeObjectURL(url);
+    showToast('✅ Файл сохранён!');
+  } catch(e) { showToast('Ошибка экспорта'); }
+}
+
+// ──────────────────── Color picker for categories ────────────────────
+const CAT_COLOR_OPTIONS = ['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#c77dff','#ff6bb5',
+  '#ff9f43','#00d2d3','#54a0ff','#5f27cd','#01adb5','#ff6348'];
+let _newCatColor = null;
+
+function initColorPicker() {
+  const cp = document.getElementById('cat-color-picker');
+  if (!cp) return;
+  cp.innerHTML = CAT_COLOR_OPTIONS.map(col =>
+    `<div class="color-dot${col===_newCatColor?' selected':''}" style="background:${col}"
+      onclick="pickCatColor('${col}')"></div>`
+  ).join('') + `<div class="color-dot${!_newCatColor?' selected':''}" style="background:var(--bg);border:2px solid var(--hint)" onclick="pickCatColor(null)" title="Без цвета">✕</div>`;
+}
+
+function pickCatColor(col) {
+  _newCatColor = col;
+  document.querySelectorAll('.color-dot').forEach(d => {
+    d.classList.toggle('selected',
+      col ? d.style.background === col : d.title === 'Без цвета');
+  });
+}
+
 // ──────────────────── Boot ────────────────────
 initCatPicker();
+preloadTags();
 loadHome();
 </script>
 </body>

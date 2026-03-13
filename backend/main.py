@@ -203,16 +203,20 @@ class ReminderCreate(BaseModel):
 
 @app.get("/api/records")
 async def list_records(
-    request:  Request,
-    category: Optional[str] = Query(None),
-    q:        Optional[str] = Query(None),
-    limit:    int           = Query(20, le=100),
-    offset:   int           = Query(0),
+    request:          Request,
+    category:         Optional[str] = Query(None),
+    q:                Optional[str] = Query(None),
+    limit:            int           = Query(20, le=200),
+    offset:           int           = Query(0),
+    sort:             str           = Query("date"),
+    tag_filter:       Optional[str] = Query(None),
+    include_archived: bool          = Query(False),
 ):
     user_id = get_user_id(request)
     records = await storage.get_records(
         user_id=user_id, category=category, query=q,
-        limit=limit, offset=offset,
+        limit=limit, offset=offset, sort=sort,
+        tag_filter=tag_filter, include_archived=include_archived,
     )
     return {"records": records, "count": len(records)}
 
@@ -329,6 +333,78 @@ async def delete_record(record_id: str, request: Request):
 async def get_stats(request: Request):
     user_id = get_user_id(request)
     return await storage.get_stats(user_id=user_id)
+
+
+@app.get("/api/tags")
+async def get_tags(request: Request):
+    user_id = get_user_id(request)
+    tags = await storage.get_all_tags(user_id)
+    return {"tags": tags}
+
+
+@app.post("/api/records/{record_id}/archive")
+async def archive_record(record_id: str, request: Request):
+    user_id = get_user_id(request)
+    record  = await storage.get_record(record_id)
+    if not record or record.get("user_id") != user_id:
+        raise HTTPException(status_code=404, detail="Record not found")
+    await storage.archive_record(record_id, True)
+    return {"ok": True}
+
+
+@app.post("/api/records/{record_id}/unarchive")
+async def unarchive_record(record_id: str, request: Request):
+    user_id = get_user_id(request)
+    record  = await storage.get_record(record_id)
+    if not record or record.get("user_id") != user_id:
+        raise HTTPException(status_code=404, detail="Record not found")
+    await storage.archive_record(record_id, False)
+    return {"ok": True}
+
+
+@app.post("/api/records/{record_id}/duplicate", status_code=201)
+async def duplicate_record(record_id: str, request: Request):
+    user_id = get_user_id(request)
+    record  = await storage.get_record(record_id)
+    if not record or record.get("user_id") != user_id:
+        raise HTTPException(status_code=404, detail="Record not found")
+    new_record = {
+        "user_id":     user_id,
+        "category":    record["category"],
+        "title":       record["title"] + " (копия)",
+        "description": record["description"],
+        "link":        record.get("link"),
+        "photo":       record.get("photo"),
+        "rating":      record.get("rating", 0),
+        "tags":        record.get("tags", []),
+    }
+    new_id = await storage.add_record(new_record)
+    return {"id": new_id, **new_record}
+
+
+@app.get("/api/export")
+async def export_records(request: Request, fmt: str = Query("csv")):
+    from fastapi.responses import StreamingResponse
+    import io, csv
+    user_id = get_user_id(request)
+    records = await storage.export_records(user_id)
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["ID","Категория","Название","Описание","Ссылка","Оценка","Теги","Архив","Дата"])
+    for r in records:
+        writer.writerow([
+            r["id"], r["category"], r["title"], r["description"],
+            r.get("link",""), r.get("rating",0),
+            ",".join(r.get("tags",[])), "Да" if r.get("is_archived") else "Нет",
+            r.get("created_at","")[:10]
+        ])
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": "attachment; filename=notes_export.csv"}
+    )
 
 
 @app.get("/api/categories")

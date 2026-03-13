@@ -20,10 +20,11 @@ class Record(Base):
     title       = Column(String(256), nullable=False)
     description = Column(Text,        nullable=False)
     link        = Column(Text,        nullable=True)
-    photo       = Column(Text,        nullable=True)   # base64 or URL
+    photo       = Column(Text,        nullable=True)
     rating      = Column(Integer,     default=0)
     tags        = Column(ARRAY(Text), default=list)
     message_id  = Column(BigInteger,  nullable=True)
+    is_archived = Column(Boolean,     default=False)
     created_at  = Column(DateTime,    default=datetime.now)
 
 class Reminder(Base):
@@ -44,7 +45,7 @@ class Category(Base):
     name     = Column(String(64), nullable=False)
     emoji    = Column(String(8),  nullable=False, default="📁")
     color    = Column(String(16), nullable=True)
-    topic_id = Column(Integer,    nullable=True)   # Telegram topic, None = general
+    topic_id = Column(Integer,    nullable=True)
 
 async def init_db():
     async with engine.begin() as conn:
@@ -55,6 +56,7 @@ async def init_db():
         "ALTER TABLE reminders ADD COLUMN IF NOT EXISTS emoji VARCHAR(8)",
         "ALTER TABLE reminders ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE",
         "ALTER TABLE records   ADD COLUMN IF NOT EXISTS photo TEXT",
+        "ALTER TABLE records   ADD COLUMN IF NOT EXISTS is_archived BOOLEAN DEFAULT FALSE",
     ]
     async with engine.begin() as conn:
         for sql in migrations:
