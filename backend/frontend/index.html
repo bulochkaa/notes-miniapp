@@ -1635,14 +1635,7 @@ async function showStats() {
   await loadStats();
 }
 
-function showCat(cat) {
-  state.currentCat  = cat;
-  state.fromScreen  = 'home';
-  setNavActive('nav-home');
-  document.getElementById('cat-title').textContent = cat;
-  showScreen('screen-cat');
-  loadCategoryRecords(cat);
-}
+/* showCat moved below */
 
 function showCatFrom(cat, from) {
   state.currentCat  = cat;
@@ -1686,25 +1679,7 @@ async function loadHome() {
   }
 }
 
-async function loadCategoryRecords(cat) {
-  document.getElementById('cat-records').innerHTML = loaderHTML();
-  try {
-    const { records, count } = await GET(`/api/records?category=${encodeURIComponent(cat)}`);
-    document.getElementById('cat-sub').textContent = `${count} заметок`;
-    if (!records.length) {
-      document.getElementById('cat-records').innerHTML = emptyHTML('📭', 'Пусто', 'В этой категории нет заметок. Добавь первую!');
-      return;
-    }
-    document.getElementById('cat-records').innerHTML = '';
-    records.forEach((r, i) => {
-      const el = recordCard(r);
-      el.style.animationDelay = `${i * 40}ms`;
-      document.getElementById('cat-records').appendChild(el);
-    });
-  } catch (e) {
-    showToast(e.message);
-  }
-}
+/* loadCategoryRecords moved below */
 
 async function loadStats() {
   document.getElementById('stats-content').innerHTML = loaderHTML();
@@ -1865,19 +1840,19 @@ function renderDetail(record) {
 
 async function loadSimilar(record) {
   try {
-    const { records } = await GET(\`/api/records?category=\${encodeURIComponent(record.category)}&limit=10\`);
+    const { records } = await GET(`/api/records?category=\${encodeURIComponent(record.category)}&limit=10`);
     const similar = records.filter(r => r.id !== record.id).slice(0, 4);
     if (!similar.length) return;
-    let html = \`<div class="section-label" style="margin-top:20px">Похожие</div><div style="display:flex;flex-direction:column;gap:8px">\`;
+    let html = `<div class="section-label" style="margin-top:20px">Похожие</div><div style="display:flex;flex-direction:column;gap:8px">`;
     similar.forEach(r => {
-      const thumb = r.photo ? \`<img class="similar-thumb" src="\${r.photo}" alt="">\` : \`<div class="similar-thumb" style="display:flex;align-items:center;justify-content:center;font-size:20px">\${r.category?.split(' ')[0]||'📌'}</div>\`;
-      html += \`<div class="similar-card" onclick='showDetailById("\${r.id}")'>
+      const thumb = r.photo ? `<img class="similar-thumb" src="\${r.photo}" alt="">` : `<div class="similar-thumb" style="display:flex;align-items:center;justify-content:center;font-size:20px">\${r.category?.split(' ')[0]||'📌'}</div>`;
+      html += `<div class="similar-card" onclick='showDetailById("\${r.id}")'>
         \${thumb}
         <div class="similar-info">
           <div class="similar-title">\${esc(r.title)}</div>
           <div class="similar-meta">\${r.rating ? '⭐'.repeat(r.rating) : ''} \${formatDate(r.created_at)}</div>
         </div>
-      </div>\`;
+      </div>`;
     });
     html += '</div>';
     const sec = document.getElementById('similar-section');
@@ -2937,17 +2912,20 @@ let _newCatColor = null;
 function initColorPicker() {
   const cp = document.getElementById('cat-color-picker');
   if (!cp) return;
-  cp.innerHTML = CAT_COLOR_OPTIONS.map(col =>
-    `<div class="color-dot${col===_newCatColor?' selected':''}" style="background:${col}"
-      onclick="pickCatColor('${col}')"></div>`
-  ).join('') + `<div class="color-dot${!_newCatColor?' selected':''}" style="background:var(--bg);border:2px solid var(--hint)" onclick="pickCatColor(null)" title="Без цвета">✕</div>`;
+  cp.innerHTML = CAT_COLOR_OPTIONS.map(col => {
+    const sel = col === _newCatColor ? ' selected' : '';
+    return `<div class="color-dot${sel}" style="background:${col}" onclick="pickCatColor('${col}')"></div>`;
+  }).join('') + `<div class="color-dot no-color${!_newCatColor?' selected':''}" style="background:var(--bg);border:2px dashed var(--hint);font-size:12px;display:flex;align-items:center;justify-content:center" onclick="pickCatColor(null)">✕</div>`;
 }
 
 function pickCatColor(col) {
   _newCatColor = col;
   document.querySelectorAll('.color-dot').forEach(d => {
-    d.classList.toggle('selected',
-      col ? d.style.background === col : d.title === 'Без цвета');
+    if (col) {
+      d.classList.toggle('selected', d.style.background === col);
+    } else {
+      d.classList.toggle('selected', d.classList.contains('no-color'));
+    }
   });
 }
 
