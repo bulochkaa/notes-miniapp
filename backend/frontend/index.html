@@ -1661,6 +1661,7 @@ async function showStats() {
 function showCatFrom(cat, from) {
   state.currentCat  = cat;
   state.fromScreen  = from;
+  document.getElementById('sort-bar').style.display = '';
   setNavActive(from === 'stats' ? 'nav-stats' : 'nav-home');
   document.getElementById('cat-title').textContent = cat;
   showScreen('screen-cat');
@@ -2827,6 +2828,7 @@ function renderTagFilterChips() {
 
 // Override loadCategoryRecords to support sort/filter
 async function loadCategoryRecords(cat) {
+  if (cat === '__archive__') { loadArchiveRecords(); return; }
   document.getElementById('cat-records').innerHTML = loaderHTML();
   let url = `/api/records?category=${encodeURIComponent(cat)}&limit=100&sort=${_catSort}`;
   if (_catTagFilter) url += `&tag_filter=${encodeURIComponent(_catTagFilter)}`;
@@ -2853,7 +2855,7 @@ async function loadCategoryRecords(cat) {
 const _origShowCat = showCat;
 function showCat(cat) {
   _catSort = 'date';
-  // reset chip UI
+  _catTagFilter = null;
   setTimeout(() => {
     document.querySelectorAll('.sort-chip[data-sort]').forEach((b,i) => b.classList.toggle('active', i===0));
   }, 50);
@@ -2861,6 +2863,7 @@ function showCat(cat) {
   state.fromScreen  = 'home';
   setNavActive('nav-home');
   document.getElementById('cat-title').textContent = cat;
+  document.getElementById('sort-bar').style.display = '';
   showScreen('screen-cat');
   loadCategoryRecords(cat);
 }
@@ -2967,6 +2970,9 @@ function showArchive() {
   state.fromScreen  = 'home';
   setNavActive('nav-home');
   document.getElementById('cat-title').textContent = '📦 Архив';
+  document.getElementById('cat-sub').textContent = '';
+  // Hide sort bar for archive
+  document.getElementById('sort-bar').style.display = 'none';
   showScreen('screen-cat');
   loadArchiveRecords();
 }
