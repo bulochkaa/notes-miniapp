@@ -1222,7 +1222,7 @@
         <div class="header-sub" id="home-sub">Загрузка…</div>
       </div>
       <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Сменить тему">🌙</button>
-      <button class="theme-btn" onclick="exportRecords()" title="Экспорт CSV" style="font-size:15px">📥</button>
+      <button class="theme-btn" onclick="showArchive()" title="Архив" style="font-size:15px">📦</button>
     </div>
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
@@ -1238,6 +1238,13 @@
         <button type="button" onclick="openCreateCat()" style="background:var(--accent);border:none;border-radius:20px;color:var(--accent-t);font-family:var(--font);font-size:12px;font-weight:600;padding:4px 12px;cursor:pointer">+ Создать</button>
       </div>
       <div id="custom-cats-list"></div>
+      <div id="archive-section-wrap" style="display:none">
+        <div class="section-label" style="display:flex;align-items:center;justify-content:space-between">
+          <span>📦 Архив</span>
+          <button type="button" onclick="showArchive()" style="background:none;border:none;color:var(--link);font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;padding:4px 0">Посмотреть →</button>
+        </div>
+        <div style="font-size:13px;color:var(--hint);margin-bottom:8px" id="archive-count-label"></div>
+      </div>
       <div class="section-label" id="recent-label">Последние</div>
       <div class="records-list" id="recent-list"></div>
     </div>
@@ -1360,6 +1367,20 @@
       <div class="header-title">📊 Статистика</div>
     </div>
     <div class="scroll-area" id="stats-content"></div>
+  </div>
+
+  <!-- ════════════ SCREEN: Archive ════════════ -->
+  <div class="screen" id="screen-archive">
+    <div class="header">
+      <button class="back-btn" onclick="showHome()">←</button>
+      <div style="flex:1">
+        <div class="header-title">📦 Архив</div>
+        <div class="header-sub" id="archive-sub">Загрузка…</div>
+      </div>
+    </div>
+    <div class="scroll-area">
+      <div class="records-list" id="archive-list"></div>
+    </div>
   </div>
 
   <!-- ════════════ Bottom nav ════════════ -->
@@ -1674,6 +1695,20 @@ async function loadHome() {
     renderRecentList(records);
     document.getElementById('home-sub').textContent =
       total ? `${total} заметок в коллекции` : 'Пока нет заметок';
+
+    // Check archive count
+    try {
+      const archData = await GET('/api/records?include_archived=true&limit=200');
+      const archCount = (archData.records || []).filter(r => r.is_archived).length;
+      const wrap = document.getElementById('archive-section-wrap');
+      const lbl  = document.getElementById('archive-count-label');
+      if (archCount > 0 && wrap) {
+        wrap.style.display = 'block';
+        if (lbl) lbl.textContent = archCount + ' скрытых заметок';
+      } else if (wrap) {
+        wrap.style.display = 'none';
+      }
+    } catch(e) {}
   } catch (e) {
     showToast('Ошибка загрузки: ' + e.message);
   }
@@ -1877,6 +1912,10 @@ function renderStatsScreen(by_cat, total) {
   let html = `<div class="stats-row">
     <div class="stat-pill"><span class="num">${total}</span><span class="lbl">Всего</span></div>
     <div class="stat-pill"><span class="num">${Object.keys(by_cat).length}</span><span class="lbl">Категорий</span></div>
+  </div>`;
+  html += `<div style="display:flex;gap:8px;margin-bottom:16px">
+    <button class="btn btn-ghost" style="flex:1;font-size:13px" onclick="showArchive()">📦 Архив</button>
+    <button class="btn btn-ghost" style="flex:1;font-size:13px" onclick="exportRecords()">📥 Экспорт CSV</button>
   </div>`;
   html += '<div class="section-label">По категориям</div>';
 
@@ -2891,17 +2930,10 @@ async function duplicateRecord(id) {
 // ──────────────────── Export CSV ────────────────────
 async function exportRecords() {
   try {
-    showToast('⏳ Экспортирую…');
-    const init = tg?.initData || '';
-    const res = await fetch('/api/export?fmt=csv', { headers: { 'X-Init-Data': init } });
-    if (!res.ok) throw new Error();
-    const blob = await res.blob();
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href = url; a.download = 'notes_export.csv'; a.click();
-    URL.revokeObjectURL(url);
-    showToast('✅ Файл сохранён!');
-  } catch(e) { showToast('Ошибка экспорта'); }
+    showToast('⏳ Отправляю в Telegram…');
+    await POST('/api/export/send', {});
+    showToast('✅ CSV отправлен в ваш Telegram!');
+  } catch(e) { showToast('Ошибка: ' + e.message); }
 }
 
 // ──────────────────── Color picker for categories ────────────────────
@@ -2927,6 +2959,35 @@ function pickCatColor(col) {
       d.classList.toggle('selected', d.classList.contains('no-color'));
     }
   });
+}
+
+// ──────────────────── Archive screen ────────────────────
+function showArchive() {
+  state.currentCat  = '__archive__';
+  state.fromScreen  = 'home';
+  setNavActive('nav-home');
+  document.getElementById('cat-title').textContent = '📦 Архив';
+  showScreen('screen-cat');
+  loadArchiveRecords();
+}
+
+async function loadArchiveRecords() {
+  document.getElementById('cat-records').innerHTML = loaderHTML();
+  try {
+    const { records, count } = await GET('/api/records?include_archived=true&limit=100');
+    const archived = records.filter(r => r.is_archived);
+    document.getElementById('cat-sub').textContent = archived.length + ' заметок';
+    if (!archived.length) {
+      document.getElementById('cat-records').innerHTML = emptyHTML('📭', 'Архив пуст', 'Заархивированные заметки появятся здесь');
+      return;
+    }
+    document.getElementById('cat-records').innerHTML = '';
+    archived.forEach((r, i) => {
+      const el = recordCard(r);
+      el.style.animationDelay = `${i * 40}ms`;
+      document.getElementById('cat-records').appendChild(el);
+    });
+  } catch(e) { showToast(e.message); }
 }
 
 // ──────────────────── Boot ────────────────────

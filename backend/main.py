@@ -382,10 +382,10 @@ async def duplicate_record(record_id: str, request: Request):
     return {"id": new_id, **new_record}
 
 
-@app.get("/api/export")
-async def export_records(request: Request, fmt: str = Query("csv")):
-    from fastapi.responses import StreamingResponse
+@app.post("/api/export/send")
+async def export_and_send(request: Request):
     import io, csv
+    from aiogram.types import BufferedInputFile
     user_id = get_user_id(request)
     records = await storage.export_records(user_id)
 
@@ -399,12 +399,17 @@ async def export_records(request: Request, fmt: str = Query("csv")):
             ",".join(r.get("tags",[])), "Да" if r.get("is_archived") else "Нет",
             r.get("created_at","")[:10]
         ])
-    output.seek(0)
-    return StreamingResponse(
-        iter([output.getvalue()]),
-        media_type="text/csv; charset=utf-8",
-        headers={"Content-Disposition": "attachment; filename=notes_export.csv"}
-    )
+    csv_bytes = output.getvalue().encode("utf-8-sig")  # utf-8-sig for Excel compat
+    try:
+        await bot.send_document(
+            user_id,
+            BufferedInputFile(csv_bytes, filename="notes_export.csv"),
+            caption=f"📥 Экспорт заметок — {len(records)} записей"
+        )
+    except Exception as e:
+        logger.error(f"Export send error: {e}")
+        raise HTTPException(status_code=500, detail="Не удалось отправить файл")
+    return {"ok": True, "count": len(records)}
 
 
 @app.get("/api/categories")
