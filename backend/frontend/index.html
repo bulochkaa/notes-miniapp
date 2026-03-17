@@ -1870,15 +1870,25 @@ function renderDetail(record) {
   </div>`;
 
   html += `<div class="detail-actions">
-    <button class="btn btn-ghost" onclick="editRecord('${record.id}')">✏️ Изменить</button>
-    <button class="btn btn-danger" id="del-btn-${record.id}" onclick="confirmDelete('${record.id}')">🗑 Удалить</button>
+    <button class="btn btn-ghost" data-action="edit" data-id="${record.id}">✏️ Изменить</button>
+    <button class="btn btn-danger" data-action="delete" data-id="${record.id}">🗑 Удалить</button>
   </div>`;
 
   // Similar records section — loaded async after render
   html += `<div id="similar-section"></div>`;
 
   document.getElementById('detail-content').innerHTML = html;
-  document.querySelector('#detail-content').dataset.recordId = record.id;
+  document.getElementById('detail-content').dataset.recordId = record.id;
+  // Attach handlers via delegation — safe for any title content
+  document.getElementById('detail-content').addEventListener('click', function handler(e) {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const id = btn.dataset.id;
+    if (btn.dataset.action === 'delete') confirmDelete(id);
+    if (btn.dataset.action === 'edit')   editRecord(id);
+    // Remove listener after first use to avoid stacking
+    document.getElementById('detail-content').removeEventListener('click', handler);
+  });
 
   // Load similar async
   loadSimilar(record);
@@ -2213,7 +2223,7 @@ document.getElementById('search-input').addEventListener('input', function() {
 
 // ──────────────────── Helpers ────────────────────
 function esc(s) {
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
 function formatDate(iso) {
