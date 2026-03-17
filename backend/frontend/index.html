@@ -1067,6 +1067,121 @@
   }
   .share-btn:active { background: var(--accent)22; }
 
+  /* ── Onboarding ── */
+  .onb-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 900;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    opacity: 1;
+    transition: opacity .4s ease;
+  }
+  .onb-overlay.hiding { opacity: 0; pointer-events: none; }
+
+  .onb-slides {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    position: relative;
+  }
+  .onb-slide {
+    min-width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 28px 0;
+    text-align: center;
+    transition: transform .4s cubic-bezier(.32,.72,0,1);
+  }
+  .onb-illustration {
+    font-size: 88px;
+    line-height: 1;
+    margin-bottom: 28px;
+    filter: drop-shadow(0 8px 24px rgba(108,99,255,.35));
+    animation: onbFloat 3s ease-in-out infinite;
+  }
+  @keyframes onbFloat {
+    0%,100% { transform: translateY(0); }
+    50%      { transform: translateY(-10px); }
+  }
+  .onb-title {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -.5px;
+    margin-bottom: 12px;
+    line-height: 1.2;
+    color: var(--text);
+  }
+  .onb-desc {
+    font-size: 15px;
+    color: var(--hint);
+    line-height: 1.6;
+    max-width: 300px;
+  }
+  .onb-desc b { color: var(--text); }
+
+  .onb-bottom {
+    padding: 24px 28px calc(32px + var(--safe-b));
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    align-items: center;
+  }
+  .onb-dots {
+    display: flex;
+    gap: 8px;
+  }
+  .onb-dot {
+    width: 8px; height: 8px;
+    border-radius: 4px;
+    background: var(--hint);
+    opacity: .3;
+    transition: width .3s, opacity .3s, background .3s;
+  }
+  .onb-dot.active {
+    width: 24px;
+    opacity: 1;
+    background: var(--accent);
+  }
+  .onb-btn-row {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+  }
+  .onb-skip {
+    flex: 1;
+    height: 50px;
+    border-radius: 14px;
+    border: 1.5px solid rgba(255,255,255,.1);
+    background: transparent;
+    color: var(--hint);
+    font-family: var(--font);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .15s;
+  }
+  .onb-skip:active { opacity: .6; }
+  .onb-next {
+    flex: 2;
+    height: 50px;
+    border-radius: 14px;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-family: var(--font);
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform .1s, box-shadow .2s;
+    box-shadow: 0 4px 20px var(--accent)55;
+  }
+  .onb-next:active { transform: scale(.97); }
+  .onb-next.final { background: linear-gradient(135deg, #6c63ff, #a89cff); }
+
   /* ── Theme toggle ── */
   body.light-theme {
     --bg:  #f4f4f8;
@@ -1534,6 +1649,56 @@
 <div id="photo-fs">
   <button id="photo-fs-close" onclick="closePhotoFS()">✕</button>
   <img id="photo-fs-img" src="" alt="">
+</div>
+
+<!-- Onboarding overlay -->
+<div class="onb-overlay" id="onb-overlay" style="display:none">
+
+  <div class="onb-slides" id="onb-slides">
+
+    <!-- Slide 1 -->
+    <div class="onb-slide">
+      <div class="onb-illustration">📓</div>
+      <div class="onb-title">Добро пожаловать<br>в Заметки!</div>
+      <div class="onb-desc">Сохраняй всё что важно — фильмы, рецепты, места, идеи. <b>Всегда под рукой</b> в Telegram.</div>
+    </div>
+
+    <!-- Slide 2 -->
+    <div class="onb-slide">
+      <div class="onb-illustration">🗂</div>
+      <div class="onb-title">Категории и<br>свои разделы</div>
+      <div class="onb-desc">6 готовых категорий — или создай <b>свои</b>. Фильтруй, сортируй, ищи по тегам и описанию.</div>
+    </div>
+
+    <!-- Slide 3 -->
+    <div class="onb-slide">
+      <div class="onb-illustration">⏰</div>
+      <div class="onb-title">Напоминания<br>и повторы</div>
+      <div class="onb-desc">Выбери дату и время — бот напомнит прямо в Telegram. Можно повторять <b>каждую неделю</b> или месяц.</div>
+    </div>
+
+    <!-- Slide 4 -->
+    <div class="onb-slide">
+      <div class="onb-illustration">🚀</div>
+      <div class="onb-title">Готово к работе!</div>
+      <div class="onb-desc">Нажми <b>➕ Добавить</b> чтобы создать первую заметку. Удачи!</div>
+    </div>
+
+  </div>
+
+  <div class="onb-bottom">
+    <div class="onb-dots" id="onb-dots">
+      <div class="onb-dot active"></div>
+      <div class="onb-dot"></div>
+      <div class="onb-dot"></div>
+      <div class="onb-dot"></div>
+    </div>
+    <div class="onb-btn-row">
+      <button class="onb-skip" id="onb-skip" onclick="finishOnboarding()">Пропустить</button>
+      <button class="onb-next" id="onb-next" onclick="onbNext()">Далее →</button>
+    </div>
+  </div>
+
 </div>
 
 <!-- Toast -->
@@ -3037,10 +3202,82 @@ async function loadArchiveRecords() {
   } catch(e) { showToast(e.message); }
 }
 
+// ──────────────────── Onboarding ────────────────────
+let _onbStep = 0;
+const ONB_TOTAL = 4;
+
+function showOnboarding() {
+  const ov = document.getElementById('onb-overlay');
+  ov.style.display = 'flex';
+  _onbStep = 0;
+  updateOnbSlide();
+}
+
+function finishOnboarding() {
+  const ov = document.getElementById('onb-overlay');
+  ov.classList.add('hiding');
+  setTimeout(() => { ov.style.display = 'none'; ov.classList.remove('hiding'); }, 400);
+  try { localStorage.setItem('onb_done', '1'); } catch(e) {}
+}
+
+function onbNext() {
+  if (_onbStep < ONB_TOTAL - 1) {
+    _onbStep++;
+    updateOnbSlide();
+  } else {
+    finishOnboarding();
+  }
+}
+
+function updateOnbSlide() {
+  // Translate slides
+  const slides = document.getElementById('onb-slides');
+  slides.style.transform = `translateX(-${_onbStep * 100}%)`;
+
+  // Dots
+  document.querySelectorAll('.onb-dot').forEach((d, i) => {
+    d.classList.toggle('active', i === _onbStep);
+  });
+
+  // Button label
+  const btn = document.getElementById('onb-next');
+  const skip = document.getElementById('onb-skip');
+  if (_onbStep === ONB_TOTAL - 1) {
+    btn.textContent = '✅ Начать';
+    btn.classList.add('final');
+    skip.style.display = 'none';
+  } else {
+    btn.textContent = 'Далее →';
+    btn.classList.remove('final');
+    skip.style.display = '';
+  }
+}
+
+// Swipe support for onboarding
+(function() {
+  let startX = 0;
+  const slides = document.getElementById('onb-slides');
+  if (!slides) return;
+  slides.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, {passive:true});
+  slides.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - startX;
+    if (dx < -50 && _onbStep < ONB_TOTAL - 1) { _onbStep++; updateOnbSlide(); }
+    if (dx >  50 && _onbStep > 0)              { _onbStep--; updateOnbSlide(); }
+  }, {passive:true});
+})();
+
 // ──────────────────── Boot ────────────────────
 initCatPicker();
 preloadTags();
 loadHome();
+
+// Show onboarding only on first visit
+try {
+  if (!localStorage.getItem('onb_done')) {
+    // Small delay so home loads in background
+    setTimeout(showOnboarding, 300);
+  }
+} catch(e) {}
 </script>
 </body>
 </html>
