@@ -1082,22 +1082,32 @@
 
   .onb-slides {
     flex: 1;
-    display: flex;
-    flex-direction: row;
-    overflow: hidden;
     position: relative;
-    transition: transform .4s cubic-bezier(.32,.72,0,1);
+    overflow: hidden;
   }
   .onb-slide {
-    min-width: 100%;
-    width: 100%;
-    flex-shrink: 0;
+    position: absolute;
+    inset: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 32px 28px 0;
     text-align: center;
+    transform: translateX(100%);
+    transition: transform .4s cubic-bezier(.32,.72,0,1);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .onb-slide.active {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: all;
+  }
+  .onb-slide.prev {
+    transform: translateX(-100%);
+    opacity: 0;
+    pointer-events: none;
   }
   .onb-illustration {
     font-size: 88px;
@@ -3213,6 +3223,13 @@ function showOnboarding() {
   const ov = document.getElementById('onb-overlay');
   ov.style.display = 'flex';
   _onbStep = 0;
+  // Set first slide active immediately without transition
+  document.querySelectorAll('.onb-slide').forEach((el, i) => {
+    el.style.transition = 'none';
+    el.classList.remove('active','prev');
+    if (i === 0) el.classList.add('active');
+    requestAnimationFrame(() => { el.style.transition = ''; });
+  });
   updateOnbSlide();
 }
 
@@ -3233,17 +3250,18 @@ function onbNext() {
 }
 
 function updateOnbSlide() {
-  // Translate slides
-  const slides = document.getElementById('onb-slides');
-  slides.style.transform = `translateX(-${_onbStep * 100}%)`;
+  const slideEls = document.querySelectorAll('.onb-slide');
+  slideEls.forEach((el, i) => {
+    el.classList.remove('active', 'prev');
+    if (i === _onbStep)      el.classList.add('active');
+    else if (i < _onbStep)   el.classList.add('prev');
+  });
 
-  // Dots
   document.querySelectorAll('.onb-dot').forEach((d, i) => {
     d.classList.toggle('active', i === _onbStep);
   });
 
-  // Button label
-  const btn = document.getElementById('onb-next');
+  const btn  = document.getElementById('onb-next');
   const skip = document.getElementById('onb-skip');
   if (_onbStep === ONB_TOTAL - 1) {
     btn.textContent = '✅ Начать';
