@@ -1659,6 +1659,7 @@ async function showStats() {
 /* showCat moved below */
 
 function showCatFrom(cat, from) {
+  if (cat === '__archive__') { showArchive(); return; }
   state.currentCat  = cat;
   state.fromScreen  = from;
   document.getElementById('sort-bar').style.display = '';
@@ -2124,13 +2125,20 @@ function closeOverlay() {
 
 document.getElementById('del-confirm-btn').onclick = async () => {
   if (!_deleteId) return;
+  const btn = document.getElementById('del-confirm-btn');
+  btn.disabled = true;
+  btn.textContent = '…';
   try {
     await DELETE(`/api/records/${_deleteId}`);
     closeOverlay();
     showToast('🗑 Запись удалена');
-    showHome();
+    if (state.currentCat === '__archive__') showArchive();
+    else showHome();
   } catch (e) {
-    showToast(e.message);
+    showToast('Ошибка: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🗑 Удалить';
   }
 };
 
