@@ -1871,7 +1871,7 @@ function renderDetail(record) {
 
   html += `<div class="detail-actions">
     <button class="btn btn-ghost" onclick="editRecord('${record.id}')">✏️ Изменить</button>
-    <button class="btn btn-danger" onclick="confirmDelete('${record.id}', '${esc(record.title)}')">🗑</button>
+    <button class="btn btn-danger" id="del-btn-${record.id}" onclick="confirmDelete('${record.id}')">🗑 Удалить</button>
   </div>`;
 
   // Similar records section — loaded async after render
@@ -2121,9 +2121,9 @@ document.getElementById('form-back').onclick = () => {
 // ──────────────────── Delete ────────────────────
 let _deleteId = null;
 
-function confirmDelete(id, title) {
+function confirmDelete(id) {
   _deleteId = id;
-  document.getElementById('del-record-name').textContent = `«${title}» будет удалена навсегда.`;
+  document.getElementById('del-record-name').textContent = 'Запись будет удалена навсегда.';
   document.getElementById('del-overlay').classList.add('show');
 }
 
