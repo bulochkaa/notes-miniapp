@@ -2928,6 +2928,7 @@ function clearReminder(e) {
 async function showReminders() {
   setNavActive('nav-reminders');
   showScreen('screen-reminders');
+  markRemindersSeen();
   await loadReminders();
 }
 
@@ -3637,16 +3638,32 @@ async function unpinRecord(id) {
 async function updateRemindersBadge() {
   try {
     const { reminders } = await GET('/api/reminders');
-    const count = (reminders || []).length;
+    const ids = (reminders || []).map(r => r.id).sort().join(',');
+    let seen = '';
+    try { seen = localStorage.getItem('reminders_seen') || ''; } catch(e) {}
+    // Find new reminders not seen yet
+    const allIds = (reminders || []).map(r => r.id);
+    const seenSet = new Set(seen ? seen.split(',') : []);
+    const newCount = allIds.filter(id => !seenSet.has(id)).length;
     const badge = document.getElementById('reminders-badge');
     if (!badge) return;
-    if (count > 0) {
-      badge.textContent = count > 9 ? '9+' : count;
+    if (newCount > 0) {
+      badge.textContent = newCount > 9 ? '9+' : newCount;
       badge.style.display = 'flex';
     } else {
       badge.style.display = 'none';
     }
   } catch(e) {}
+}
+
+function markRemindersSeen() {
+  // Called when user opens reminders tab
+  GET('/api/reminders').then(({ reminders }) => {
+    const ids = (reminders || []).map(r => r.id).join(',');
+    try { localStorage.setItem('reminders_seen', ids); } catch(e) {}
+    const badge = document.getElementById('reminders-badge');
+    if (badge) badge.style.display = 'none';
+  }).catch(() => {});
 }
 
 // ──────────────────── Boot ────────────────────
