@@ -10,18 +10,17 @@
 <style>
   /* ──────────────────── CSS Variables ──────────────────── */
   :root {
-    /* Dark theme defaults */
-    --bg:        #0e0e14;
-    --bg2:       #17171f;
-    --bg3:       #1f1f2a;
+    --bg:        transparent;
+    --bg2:       rgba(255,255,255,.055);
+    --bg3:       rgba(255,255,255,.09);
     --text:      #f0f0f7;
-    --hint:      #64647a;
-    --accent:    #7b6ff0;
+    --hint:      #7878a0;
+    --accent:    #8b7fff;
     --accent-t:  #ffffff;
-    --link:      #a99dff;
-    --border:    rgba(255,255,255,.07);
-    --shadow:    0 2px 16px rgba(0,0,0,.35);
-    --shadow-lg: 0 8px 40px rgba(0,0,0,.5);
+    --link:      #b8adff;
+    --border:    rgba(255,255,255,.10);
+    --shadow:    0 2px 16px rgba(0,0,0,.4);
+    --shadow-lg: 0 8px 40px rgba(0,0,0,.6);
     --radius:    18px;
     --radius-sm: 12px;
     --font:      'Onest', sans-serif;
@@ -33,13 +32,54 @@
 
   html, body {
     height: 100%;
-    background: var(--bg);
+    background: #0a0a0f;
     color: var(--text);
     font-family: var(--font);
     font-size: 15px;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     overflow: hidden;
+  }
+
+  /* ── Animated background ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: -20%;
+    z-index: 0;
+    background:
+      radial-gradient(ellipse 60% 80% at 20% 10%,  rgba(120,110,180,.28) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 70% at 80% 20%,  rgba(80,70,140,.20)  0%, transparent 55%),
+      radial-gradient(ellipse 70% 50% at 50% 80%,  rgba(40,35,80,.30)   0%, transparent 60%),
+      radial-gradient(ellipse 40% 60% at 10% 70%,  rgba(90,80,150,.18)  0%, transparent 50%),
+      radial-gradient(ellipse 80% 40% at 90% 60%,  rgba(60,55,110,.22)  0%, transparent 55%);
+    filter: blur(40px);
+    animation: bgShift 18s ease-in-out infinite alternate;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background: repeating-linear-gradient(
+      92deg,
+      transparent 0px,
+      transparent 3px,
+      rgba(255,255,255,.012) 3px,
+      rgba(255,255,255,.012) 4px
+    );
+    pointer-events: none;
+  }
+  @keyframes bgShift {
+    0%   { transform: scale(1)    rotate(0deg)   translate(0,0); }
+    33%  { transform: scale(1.05) rotate(2deg)   translate(-2%,1%); }
+    66%  { transform: scale(1.02) rotate(-1deg)  translate(2%,-1%); }
+    100% { transform: scale(1.06) rotate(1.5deg) translate(-1%,2%); }
+  }
+
+  #app {
+    position: relative;
+    z-index: 1;
   }
 
   /* ──────────────────── Layout ──────────────────── */
@@ -49,6 +89,7 @@
     height: 100vh;
     height: 100dvh;
     position: relative;
+    z-index: 1;
   }
 
   .screen {
@@ -90,7 +131,9 @@
     gap: 8px;
     position: relative;
     z-index: 2;
-    background: var(--bg);
+    background: rgba(10,10,15,.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
   }
   .header-title {
     font-size: 22px;
@@ -126,18 +169,20 @@
   }
   .search-input {
     width: 100%;
-    height: 40px;
+    height: 42px;
     border-radius: var(--radius-sm);
-    border: none;
+    border: 1px solid var(--border);
     background: var(--bg2);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     color: var(--text);
     font-family: var(--font);
     font-size: 15px;
     padding: 0 40px 0 38px;
     outline: none;
-    transition: box-shadow .2s;
+    transition: box-shadow .2s, border-color .2s;
   }
-  .search-input:focus { box-shadow: 0 0 0 2px var(--accent)44; }
+  .search-input:focus { box-shadow: 0 0 0 3px var(--accent)33; border-color: var(--accent)88; }
   .search-input::placeholder { color: var(--hint); }
   .search-icon {
     position: absolute;
@@ -169,6 +214,8 @@
 
   .cat-card {
     background: var(--bg2);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border-radius: var(--radius);
     padding: 18px 16px;
     cursor: pointer;
@@ -225,6 +272,8 @@
   .stat-pill {
     flex: 1;
     background: var(--bg2);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border-radius: var(--radius-sm);
     padding: 14px;
     text-align: center;
@@ -263,6 +312,8 @@
 
   .record-card {
     background: var(--bg2);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border-radius: var(--radius);
     padding: 14px 16px;
     cursor: pointer;
@@ -371,6 +422,8 @@
 
   .detail-block {
     background: var(--bg2);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border-radius: var(--radius-sm);
     padding: 14px;
     margin-bottom: 10px;
@@ -536,13 +589,13 @@
     left: 0; right: 0;
     height: calc(62px + var(--safe-b));
     padding-bottom: var(--safe-b);
-    background: rgba(14,14,20,.88);
-    border-top: 1px solid var(--border);
+    background: rgba(12,11,18,.75);
+    border-top: 1px solid rgba(255,255,255,.08);
     display: flex;
     align-items: stretch;
     z-index: 100;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
   }
   .nav-btn {
     flex: 1;
@@ -663,7 +716,9 @@
   .overlay.show { opacity: 1; pointer-events: all; }
   .sheet {
     width: 100%;
-    background: var(--bg2);
+    background: rgba(18,17,28,.92);
+    backdrop-filter: blur(32px);
+    -webkit-backdrop-filter: blur(32px);
     border-radius: 20px 20px 0 0;
     border-top: 1px solid var(--border);
     padding: 20px 20px calc(20px + var(--safe-b));
@@ -733,7 +788,9 @@
   .cal-overlay.show { opacity: 1; pointer-events: all; }
   .cal-sheet {
     width: 100%;
-    background: var(--bg2);
+    background: rgba(18,17,28,.94);
+    backdrop-filter: blur(32px);
+    -webkit-backdrop-filter: blur(32px);
     border-radius: 20px 20px 0 0;
     border-top: 1px solid var(--border);
     padding: 0 0 calc(16px + var(--safe-b));
@@ -1001,7 +1058,9 @@
   .create-cat-overlay.show { opacity: 1; pointer-events: all; }
   .create-cat-sheet {
     width: 100%;
-    background: var(--bg2);
+    background: rgba(18,17,28,.94);
+    backdrop-filter: blur(32px);
+    -webkit-backdrop-filter: blur(32px);
     border-radius: 20px 20px 0 0;
     border-top: 1px solid var(--border);
     padding: 20px 20px calc(28px + var(--safe-b));
@@ -1232,16 +1291,27 @@
 
   /* ── Theme toggle ── */
   body.light-theme {
-    --bg:     #f0f0f6;
-    --bg2:    #ffffff;
-    --bg3:    #e8e8f0;
+    --bg:     rgba(240,240,248,.95);
+    --bg2:    rgba(255,255,255,.80);
+    --bg3:    rgba(230,230,242,.90);
     --text:   #18182a;
     --hint:   #7878a0;
     --accent: #6c63ff;
     --link:   #4c44cc;
-    --border: rgba(0,0,0,.08);
-    --shadow:    0 2px 12px rgba(0,0,0,.08);
-    --shadow-lg: 0 8px 32px rgba(0,0,0,.12);
+    --border: rgba(0,0,0,.07);
+    --shadow:    0 2px 12px rgba(0,0,0,.07);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,.10);
+  }
+  body.light-theme::before {
+    background:
+      radial-gradient(ellipse 60% 80% at 20% 10%,  rgba(180,175,255,.35) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 70% at 80% 20%,  rgba(140,130,230,.25) 0%, transparent 55%),
+      radial-gradient(ellipse 70% 50% at 50% 80%,  rgba(160,155,220,.20) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 60% at 10% 70%,  rgba(200,195,255,.20) 0%, transparent 50%),
+      radial-gradient(ellipse 80% 40% at 90% 60%,  rgba(170,165,240,.22) 0%, transparent 55%);
+  }
+  body.light-theme .header {
+    background: rgba(235,235,245,.75);
   }
   body.light-theme .bottom-nav {
     background: rgba(255,255,255,.92);
