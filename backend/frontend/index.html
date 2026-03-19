@@ -657,11 +657,164 @@
   /* ──────────────────── Empty state ──────────────────── */
   .empty {
     text-align: center;
-    padding: 60px 20px;
+    padding: 48px 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .empty-illustration {
+    width: 120px; height: 120px;
+    border-radius: 30px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 52px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
   }
   .empty-icon { font-size: 52px; margin-bottom: 14px; }
-  .empty-title { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
-  .empty-sub { font-size: 14px; color: var(--hint); line-height: 1.5; }
+  .empty-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; letter-spacing: -.3px; }
+  .empty-sub { font-size: 14px; color: var(--hint); line-height: 1.6; max-width: 240px; }
+  .empty-action {
+    margin-top: 20px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 14px;
+    padding: 12px 24px;
+    font-family: var(--font);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 16px var(--accent)44;
+    transition: transform .1s;
+  }
+  .empty-action:active { transform: scale(.97); }
+
+  /* ── Pull to refresh ── */
+  .ptr-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 48px;
+    color: var(--hint);
+    font-size: 13px;
+    font-weight: 500;
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height .3s;
+    opacity: 0;
+  }
+  .ptr-indicator.visible { max-height: 48px; opacity: 1; }
+  .ptr-spin {
+    width: 18px; height: 18px;
+    border: 2px solid var(--hint);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+
+  /* ── Swipe actions on card ── */
+  .swipe-wrap {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius);
+    margin-bottom: 10px;
+  }
+  .swipe-actions {
+    position: absolute;
+    right: 0; top: 0; bottom: 0;
+    display: flex;
+    transform: translateX(100%);
+    transition: transform .2s ease;
+  }
+  .swipe-action-btn {
+    width: 72px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    border: none;
+    cursor: pointer;
+    font-size: 20px;
+    font-family: var(--font);
+    font-size: 10px;
+    font-weight: 700;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    transition: opacity .15s;
+  }
+  .swipe-action-btn:active { opacity: .7; }
+  .swipe-action-btn span:first-child { font-size: 22px; }
+  .swipe-action-archive { background: #f59e0b; }
+  .swipe-action-delete  { background: #ef4444; }
+  .swipe-wrap .record-card { margin-bottom: 0; border-radius: var(--radius); }
+
+  /* ── Templates ── */
+  .template-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .template-btn {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color .15s, background .15s;
+    font-family: var(--font);
+  }
+  .template-btn:active { background: var(--bg3); border-color: var(--accent)66; }
+  .template-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+  .template-name { font-size: 13px; font-weight: 600; color: var(--text); display: block; }
+  .template-hint { font-size: 11px; color: var(--hint); }
+
+  /* ── Quick dates ── */
+  .quick-dates {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 12px 16px 4px;
+  }
+  .quick-date-btn {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .15s, border-color .15s;
+  }
+  .quick-date-btn:active { background: var(--accent)22; border-color: var(--accent); color: var(--accent); }
+
+  /* ── Streak ── */
+  .streak-banner {
+    background: linear-gradient(135deg, rgba(255,140,0,.15), rgba(255,80,0,.08));
+    border: 1px solid rgba(255,140,0,.25);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    animation: fadeUp .3s ease;
+  }
+  .streak-fire { font-size: 28px; }
+  .streak-text { flex: 1; }
+  .streak-num  { font-size: 18px; font-weight: 800; color: #ff8c00; }
+  .streak-sub  { font-size: 12px; color: var(--hint); }
 
   /* ──────────────────── Toast ──────────────────── */
   /* ── Badge ── */
@@ -1598,7 +1751,10 @@
       <input class="search-input" id="search-input" placeholder="Поиск по заметкам…" autocomplete="off">
       <button class="search-clear" id="search-clear">✕</button>
     </div>
-    <div class="scroll-area">
+    <div class="scroll-area" id="home-scroll">
+      <div class="ptr-indicator" id="ptr-indicator">
+        <div class="ptr-spin"></div> Обновление…
+      </div>
       <div id="stats-row" class="stats-row"></div>
       <div class="section-label">Категории</div>
       <div class="category-grid" id="cat-grid"></div>
@@ -1659,6 +1815,10 @@
       <div class="header-title" id="form-title">Новая заметка</div>
     </div>
     <div class="scroll-area">
+      <div class="form-group" id="templates-group" style="display:none">
+        <label class="form-label">Быстрый шаблон</label>
+        <div class="template-grid" id="template-grid"></div>
+      </div>
       <div class="form-group">
         <label class="form-label">Категория</label>
         <div class="cat-picker" id="form-cat-picker"></div>
@@ -1899,6 +2059,8 @@
       <div class="cal-wd">Вс</div>
     </div>
     <div class="cal-grid" id="cal-grid"></div>
+
+    <div class="quick-dates" id="quick-dates"></div>
 
     <div class="emoji-section">
       <div class="emoji-section-label">Эмодзи для даты</div>
@@ -2168,6 +2330,7 @@ async function loadHome() {
     renderRecentList(records);
     document.getElementById('home-sub').textContent =
       total ? `${total} заметок в коллекции` : 'Пока нет заметок';
+    updateStreak();
 
     // Pinned records
     try {
@@ -2255,7 +2418,7 @@ function renderRecentList(records) {
   const label = document.getElementById('recent-label');
   if (!records.length) {
     label.style.display = 'none';
-    list.innerHTML = emptyHTML('✨', 'Начни коллекцию', 'Нажми + чтобы добавить первую заметку');
+    list.innerHTML = emptyHTML('✨', 'Начни коллекцию', 'Сохраняй фильмы, места, рецепты и идеи в одном месте', '➕ Добавить заметку', 'showAdd()');
     return;
   }
   label.style.display = 'block';
@@ -2263,11 +2426,26 @@ function renderRecentList(records) {
   records.forEach((r, i) => {
     const el = recordCard(r);
     el.style.animationDelay = `${i * 50}ms`;
+    el.style.animation = `fadeUp .3s ease ${i * 50}ms both`;
     list.appendChild(el);
   });
 }
 
 function recordCard(record) {
+  // Wrap in swipe container
+  const wrap = document.createElement('div');
+  wrap.className = 'swipe-wrap';
+  wrap.innerHTML = `
+    <div class="swipe-actions">
+      <button class="swipe-action-btn swipe-action-archive" onclick="event.stopPropagation();archiveRecord('${record.id}')">
+        <span>📦</span><span>Архив</span>
+      </button>
+      <button class="swipe-action-btn swipe-action-delete" onclick="event.stopPropagation();confirmDelete('${record.id}')">
+        <span>🗑</span><span>Удалить</span>
+      </button>
+    </div>`;
+  setupSwipe(wrap);
+
   const div = document.createElement('div');
   div.className = 'record-card' + (record.photo ? ' has-photo' : '');
 
@@ -2296,7 +2474,8 @@ function recordCard(record) {
     </div>`;
   div.innerHTML = inner;
   div.onclick = () => showDetail(record);
-  return div;
+  wrap.appendChild(div);
+  return wrap;
 }
 
 function renderDetail(record) {
@@ -2582,7 +2761,7 @@ document.getElementById('form-submit').onclick = async () => {
         photo: state._formPhoto || null,
         rating: state._formRating, tags,
       });
-      showToast('✅ Запись обновлена!');
+      showToast('✅ Запись обновлена!'); haptic('success');
     } else {
       await POST('/api/records', {
         category: state._formCat, title, description: desc,
@@ -2598,7 +2777,7 @@ document.getElementById('form-submit').onclick = async () => {
         const months = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
         showToast('✅ Добавлено! ⏰ Напомню ' + d.getDate() + ' ' + months[d.getMonth()]);
       } else {
-        showToast('✅ Заметка добавлена!');
+        showToast('✅ Заметка добавлена!'); haptic('success');
       }
       if (tg) tg.HapticFeedback?.notificationOccurred('success');
     }
@@ -2648,7 +2827,7 @@ document.getElementById('del-confirm-btn').onclick = async () => {
       throw new Error(err.detail || 'HTTP ' + res.status);
     }
     closeOverlay();
-    showToast('🗑 Запись удалена');
+    showToast('🗑 Запись удалена'); haptic('impact');
     if (fromArchive) {
       document.getElementById('cat-title').textContent = '📦 Архив';
       document.getElementById('sort-bar').style.display = 'none';
@@ -2727,8 +2906,16 @@ function loaderHTML() {
   return `<div class="loader"><div class="spinner"></div> Загрузка…</div>`;
 }
 
-function emptyHTML(icon, title, sub) {
-  return `<div class="empty"><div class="empty-icon">${icon}</div><div class="empty-title">${title}</div><div class="empty-sub">${sub}</div></div>`;
+function emptyHTML(icon, title, sub, actionLabel, actionFn) {
+  const action = actionLabel
+    ? `<button class="empty-action" onclick="${actionFn}">${actionLabel}</button>`
+    : '';
+  return `<div class="empty">
+    <div class="empty-illustration">${icon}</div>
+    <div class="empty-title">${title}</div>
+    <div class="empty-sub">${sub}</div>
+    ${action}
+  </div>`;
 }
 
 let _toastTimer;
@@ -2754,13 +2941,13 @@ function openCalendar() {
   _calDate     = new Date();
   _calSelected = state._reminderDate || null;
   _calEmoji    = state._reminderEmoji || '🔔';
-  // Reset time/repeat to current state
   const timeEl = document.getElementById('cal-time');
   const repEl  = document.getElementById('cal-repeat');
   if (timeEl) timeEl.value   = state._reminderTime   || '09:00';
   if (repEl)  repEl.value    = state._reminderRepeat || '';
   renderCalendar();
   renderEmojiGrid();
+  initQuickDates();
   const overlay = document.getElementById('cal-overlay');
   overlay.style.opacity       = '';
   overlay.style.pointerEvents = '';
@@ -3202,7 +3389,7 @@ document.getElementById('create-cat-btn').onclick = async () => {
   if (!name) { showToast('Введи название'); return; }
   try {
     await POST('/api/categories', {name, emoji: _newCatEmoji, color: _newCatColor});
-    showToast('✅ Категория создана!');
+    showToast('✅ Категория создана!'); haptic('success');
     closeCreateCat();
     await loadCustomCategories();
   } catch(e) { showToast('Ошибка создания'); }
@@ -3371,7 +3558,7 @@ async function loadCategoryRecords(cat) {
     document.getElementById('cat-sub').textContent = sub;
     renderTagFilterChips();
     if (!records.length) {
-      document.getElementById('cat-records').innerHTML = emptyHTML('📭', 'Пусто', 'В этой категории нет заметок.');
+      document.getElementById('cat-records').innerHTML = emptyHTML('📭', 'Пусто', 'В этой категории пока нет заметок', '➕ Добавить', 'showAdd()');
       return;
     }
     document.getElementById('cat-records').innerHTML = '';
@@ -3516,7 +3703,7 @@ async function loadArchiveRecords() {
     const archived = records.filter(r => r.is_archived);
     document.getElementById('cat-sub').textContent = archived.length + ' заметок';
     if (!archived.length) {
-      document.getElementById('cat-records').innerHTML = emptyHTML('📭', 'Архив пуст', 'Заархивированные заметки появятся здесь');
+      document.getElementById('cat-records').innerHTML = emptyHTML('📦', 'Архив пуст', 'Заархивированные заметки будут храниться здесь');
       return;
     }
     document.getElementById('cat-records').innerHTML = '';
@@ -3599,6 +3786,214 @@ function updateOnbSlide() {
     if (dx >  50 && _onbStep > 0)              { _onbStep--; updateOnbSlide(); }
   }, {passive:true});
 })();
+
+// ──────────────────── Swipe on cards ────────────────────
+function setupSwipe(wrap) {
+  let startX = 0, curX = 0, swiping = false;
+  const actions = wrap.querySelector('.swipe-actions');
+  const actionsW = 144; // 2 × 72px
+
+  wrap.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+    swiping = true;
+  }, { passive: true });
+
+  wrap.addEventListener('touchmove', e => {
+    if (!swiping) return;
+    curX = e.touches[0].clientX - startX;
+    if (curX > 0) { curX = 0; return; }
+    const clamped = Math.max(curX, -actionsW);
+    wrap.querySelector('.record-card').style.transform = `translateX(${clamped}px)`;
+    actions.style.transform = `translateX(${100 + (clamped / actionsW) * 100}%)`;
+  }, { passive: true });
+
+  wrap.addEventListener('touchend', () => {
+    swiping = false;
+    const card = wrap.querySelector('.record-card');
+    if (curX < -actionsW / 2) {
+      // Snap open
+      card.style.transition = 'transform .2s';
+      card.style.transform = `translateX(-${actionsW}px)`;
+      actions.style.transition = 'transform .2s';
+      actions.style.transform = 'translateX(0)';
+    } else {
+      // Snap closed
+      card.style.transition = 'transform .2s';
+      card.style.transform = '';
+      actions.style.transition = 'transform .2s';
+      actions.style.transform = 'translateX(100%)';
+    }
+    setTimeout(() => {
+      card.style.transition = '';
+      actions.style.transition = '';
+    }, 220);
+    curX = 0;
+  });
+}
+
+// ──────────────────── Pull to refresh ────────────────────
+(function initPTR() {
+  let startY = 0, pulling = false, triggered = false;
+  const scroll = document.getElementById('home-scroll');
+  const indicator = document.getElementById('ptr-indicator');
+  if (!scroll || !indicator) return;
+
+  scroll.addEventListener('touchstart', e => {
+    if (scroll.scrollTop === 0) { startY = e.touches[0].clientY; pulling = true; }
+  }, { passive: true });
+
+  scroll.addEventListener('touchmove', e => {
+    if (!pulling) return;
+    const dy = e.touches[0].clientY - startY;
+    if (dy > 60 && !triggered) {
+      triggered = true;
+      indicator.classList.add('visible');
+      if (tg) tg.HapticFeedback?.impactOccurred('light');
+    }
+  }, { passive: true });
+
+  scroll.addEventListener('touchend', async () => {
+    if (triggered) {
+      await loadHome();
+      setTimeout(() => { indicator.classList.remove('visible'); triggered = false; }, 400);
+    }
+    pulling = false;
+  });
+})();
+
+// ──────────────────── Templates ────────────────────
+const TEMPLATES = {
+  '🎬 Фильмы': { icon:'🎬', name:'Фильм', fields: { title:'Название фильма', desc:'Жанр: \\nРежиссёр: \\nГод: \\nВпечатление: ' } },
+  '🍳 Рецепты': { icon:'🍳', name:'Рецепт', fields: { title:'Название блюда', desc:'Ингредиенты:\\n- \\n\\nПриготовление:\\n1. ' } },
+  '📍 Интересные места': { icon:'📍', name:'Место', fields: { title:'Название места', desc:'Адрес: \\nЧем понравилось: ' } },
+  '🎵 Музыка': { icon:'🎵', name:'Трек', fields: { title:'Исполнитель — Название', desc:'Жанр: \\nНастроение: ' } },
+  '🎁 Подарки': { icon:'🎁', name:'Подарок', fields: { title:'Кому:', desc:'Идея:\\nБюджет: \\nПовод: ' } },
+  '👕 Одежда': { icon:'👕', name:'Вещь', fields: { title:'Описание вещи', desc:'Размер: \\nГде купить: \\nЦена: ' } },
+};
+
+function showTemplatesForCat(cat) {
+  const tmpl = TEMPLATES[cat];
+  const group = document.getElementById('templates-group');
+  const grid  = document.getElementById('template-grid');
+  if (!tmpl || !group || !grid) { if (group) group.style.display = 'none'; return; }
+  group.style.display = 'block';
+  grid.innerHTML = `
+    <button class="template-btn" onclick="applyTemplate('${cat}')">
+      <span class="template-icon">${tmpl.icon}</span>
+      <span class="template-name">Шаблон: ${tmpl.name}</span>
+      <span class="template-hint">Заполнить автоматически</span>
+    </button>
+    <button class="template-btn" onclick="document.getElementById('templates-group').style.display='none'">
+      <span class="template-icon">✏️</span>
+      <span class="template-name">С чистого листа</span>
+      <span class="template-hint">Заполнить самому</span>
+    </button>`;
+}
+
+function applyTemplate(cat) {
+  const tmpl = TEMPLATES[cat];
+  if (!tmpl) return;
+  document.getElementById('form-title-in').value = tmpl.fields.title;
+  document.getElementById('form-desc').value     = tmpl.fields.desc;
+  document.getElementById('templates-group').style.display = 'none';
+  document.getElementById('form-title-in').focus();
+  if (tg) tg.HapticFeedback?.impactOccurred('light');
+}
+
+// Hook template into cat picker selection
+const _origMakeCatBtn = makeCatBtn;
+function makeCatBtn(cat) {
+  const btn = _origMakeCatBtn(cat);
+  const origClick = btn.onclick;
+  btn.onclick = (e) => {
+    origClick && origClick(e);
+    showTemplatesForCat(cat);
+  };
+  return btn;
+}
+
+// ──────────────────── Quick dates in calendar ────────────────────
+function initQuickDates() {
+  const wrap = document.getElementById('quick-dates');
+  if (!wrap) return;
+  const today = new Date();
+  const dates = [
+    { label: 'Сегодня',         date: new Date() },
+    { label: 'Завтра',          date: new Date(today.getFullYear(), today.getMonth(), today.getDate()+1) },
+    { label: 'Через неделю',    date: new Date(today.getFullYear(), today.getMonth(), today.getDate()+7) },
+    { label: 'В выходные',      date: nextWeekend() },
+    { label: 'Конец месяца',    date: new Date(today.getFullYear(), today.getMonth()+1, 0) },
+    { label: 'Через месяц',     date: new Date(today.getFullYear(), today.getMonth()+1, today.getDate()) },
+  ];
+  wrap.innerHTML = dates.map(d =>
+    `<button type="button" class="quick-date-btn" onclick="pickQuickDate(${d.date.getFullYear()},${d.date.getMonth()},${d.date.getDate()})">${d.label}</button>`
+  ).join('');
+}
+
+function nextWeekend() {
+  const d = new Date();
+  const day = d.getDay();
+  const daysToSat = (6 - day + 7) % 7 || 7;
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() + daysToSat);
+}
+
+function pickQuickDate(y, m, d) {
+  _calSelected = new Date(y, m, d);
+  _calDate = new Date(y, m, 1);
+  renderCalendar();
+  if (tg) tg.HapticFeedback?.selectionChanged();
+}
+
+// ──────────────────── Streak ────────────────────
+function updateStreak() {
+  try {
+    const today = new Date().toDateString();
+    const yesterday = new Date(Date.now() - 86400000).toDateString();
+    let streak = 0, lastDate = '';
+    try {
+      streak   = parseInt(localStorage.getItem('streak') || '0');
+      lastDate = localStorage.getItem('streak_date') || '';
+    } catch(e) {}
+
+    if (lastDate === today) {
+      // Already counted today
+    } else if (lastDate === yesterday) {
+      streak++;
+      try { localStorage.setItem('streak', streak); localStorage.setItem('streak_date', today); } catch(e) {}
+    } else if (lastDate !== today) {
+      streak = 1;
+      try { localStorage.setItem('streak', '1'); localStorage.setItem('streak_date', today); } catch(e) {}
+    }
+
+    if (streak >= 2) {
+      const banner = document.createElement('div');
+      banner.className = 'streak-banner';
+      banner.innerHTML = `
+        <div class="streak-fire">🔥</div>
+        <div class="streak-text">
+          <div class="streak-num">${streak} дней подряд!</div>
+          <div class="streak-sub">Отличная серия — не останавливайся</div>
+        </div>`;
+      // Insert after stats-row
+      const statsRow = document.getElementById('stats-row');
+      if (statsRow && !document.querySelector('.streak-banner')) {
+        statsRow.insertAdjacentElement('afterend', banner);
+      }
+    }
+  } catch(e) {}
+}
+
+// ──────────────────── Haptic feedback helpers ────────────────────
+function haptic(type) {
+  if (!tg) return;
+  try {
+    if (type === 'success') tg.HapticFeedback?.notificationOccurred('success');
+    else if (type === 'error') tg.HapticFeedback?.notificationOccurred('error');
+    else if (type === 'impact') tg.HapticFeedback?.impactOccurred('medium');
+    else if (type === 'light') tg.HapticFeedback?.impactOccurred('light');
+    else if (type === 'select') tg.HapticFeedback?.selectionChanged();
+  } catch(e) {}
+}
 
 // ──────────────────── Burger menu ────────────────────
 function openBurger() {
