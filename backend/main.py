@@ -251,19 +251,7 @@ async def create_record(body: RecordCreate, request: Request):
         "tags":        body.tags,
     }
 
-    text = _format_card(record)
-    try:
-        # System categories → specific topic; custom → general chat
-        thread_id = TOPICS.get(body.category)
-        sent = await bot.send_message(
-            GROUP_ID, text,
-            message_thread_id=thread_id,
-            parse_mode="HTML",
-            disable_web_page_preview=True,
-        )
-        record["message_id"] = sent.message_id
-    except Exception as e:
-        logger.error(f"Telegram send error: {e}")
+    # Telegram group posting removed
 
     record_id = await storage.add_record(record)
 
@@ -297,16 +285,6 @@ async def update_record(record_id: str, body: RecordUpdate, request: Request):
     await storage.update_record(record_id, updates)
 
     updated = await storage.get_record(record_id)
-    msg_id  = updated.get("message_id")
-    if msg_id:
-        try:
-            await bot.edit_message_text(
-                _format_card(updated), GROUP_ID, msg_id,
-                parse_mode="HTML", disable_web_page_preview=True,
-            )
-        except Exception as e:
-            logger.warning(f"Could not edit Telegram message: {e}")
-
     return updated
 
 
@@ -317,13 +295,6 @@ async def delete_record(record_id: str, request: Request):
 
     if not record or record.get("user_id") != user_id:
         raise HTTPException(status_code=404, detail="Record not found")
-
-    msg_id = record.get("message_id")
-    if msg_id:
-        try:
-            await bot.delete_message(GROUP_ID, msg_id)
-        except Exception as e:
-            logger.warning(f"Could not delete Telegram message: {e}")
 
     await storage.delete_record(record_id)
     return {"ok": True}
@@ -434,11 +405,6 @@ async def delete_category(cat_id: str, request: Request):
     cat_name = cat["emoji"] + " " + cat["name"]
     # Delete all records in this category
     records = await storage.get_records(user_id=user_id, category=cat_name)
-    for r in records:
-        msg_id = r.get("message_id")
-        if msg_id:
-            try: await bot.delete_message(GROUP_ID, msg_id)
-            except Exception: pass
     await storage.delete_records_by_category(user_id, cat_name)
     # Delete the category itself
     ok = await storage.delete_category(cat_id)
