@@ -25,6 +25,7 @@ class Record(Base):
     tags        = Column(ARRAY(Text), default=list)
     message_id  = Column(BigInteger,  nullable=True)
     is_archived = Column(Boolean,     default=False)
+    is_pinned   = Column(Boolean,     default=False)
     created_at  = Column(DateTime,    default=datetime.now)
 
 class Reminder(Base):
@@ -57,6 +58,7 @@ async def init_db():
         "ALTER TABLE reminders ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE",
         "ALTER TABLE records   ADD COLUMN IF NOT EXISTS photo TEXT",
         "ALTER TABLE records   ADD COLUMN IF NOT EXISTS is_archived BOOLEAN DEFAULT FALSE",
+        "ALTER TABLE records   ADD COLUMN IF NOT EXISTS is_pinned BOOLEAN DEFAULT FALSE",
     ]
     async with engine.begin() as conn:
         for sql in migrations:

@@ -664,6 +664,104 @@
   .empty-sub { font-size: 14px; color: var(--hint); line-height: 1.5; }
 
   /* ──────────────────── Toast ──────────────────── */
+  /* ── Badge ── */
+  .nav-badge {
+    position: absolute;
+    top: 0; right: 4px;
+    min-width: 16px; height: 16px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 4px;
+    line-height: 1;
+    pointer-events: none;
+    border: 2px solid transparent;
+  }
+
+  /* ── Burger menu ── */
+  .burger-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.5);
+    z-index: 500;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s;
+  }
+  .burger-overlay.show { opacity: 1; pointer-events: all; }
+  .burger-sheet {
+    position: absolute;
+    top: 0; right: 0;
+    width: 72vw; max-width: 280px;
+    height: 100%;
+    background: rgba(16,15,24,.96);
+    backdrop-filter: blur(32px);
+    -webkit-backdrop-filter: blur(32px);
+    border-left: 1px solid var(--border);
+    transform: translateX(100%);
+    transition: transform .3s cubic-bezier(.32,.72,0,1);
+    display: flex;
+    flex-direction: column;
+    padding: calc(24px + env(safe-area-inset-top,0px)) 0 calc(24px + var(--safe-b));
+  }
+  body.light-theme .burger-sheet {
+    background: rgba(240,238,248,.97);
+  }
+  .burger-overlay.show .burger-sheet { transform: translateX(0); }
+  .burger-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--hint);
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    padding: 0 20px 12px;
+  }
+  .burger-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 20px;
+    cursor: pointer;
+    transition: background .15s;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 15px;
+    font-weight: 500;
+  }
+  .burger-item:active { background: var(--bg3); }
+  .burger-item-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .burger-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 8px 20px;
+  }
+  .burger-item-sub {
+    font-size: 12px;
+    color: var(--hint);
+    margin-top: 1px;
+  }
+
+  /* ── Pin badge on record card ── */
+  .pin-badge {
+    position: absolute;
+    top: 10px; right: 10px;
+    font-size: 13px;
+    opacity: .7;
+  }
+
   .toast {
     position: fixed;
     bottom: calc(70px + var(--safe-b) + 10px);
@@ -1493,10 +1591,7 @@
         <div class="header-title">📓 Заметки</div>
         <div class="header-sub" id="home-sub">Загрузка…</div>
       </div>
-      <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Сменить тему">🌙</button>
-      <button class="theme-btn" onclick="showArchive()" title="Архив" style="font-size:15px">📦</button>
-      <button class="theme-btn" onclick="exportRecords()" title="Экспорт CSV" style="font-size:15px">📥</button>
-      <button class="theme-btn" onclick="showOnboarding()" title="Обучение" style="font-size:15px">❓</button>
+      <button class="theme-btn" id="burger-btn" onclick="openBurger()" title="Меню" style="font-size:18px">☰</button>
     </div>
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
@@ -1518,6 +1613,10 @@
           <button type="button" onclick="showArchive()" style="background:none;border:none;color:var(--link);font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;padding:4px 0">Посмотреть →</button>
         </div>
         <div style="font-size:13px;color:var(--hint);margin-bottom:8px" id="archive-count-label"></div>
+      </div>
+      <div id="pinned-section-wrap" style="display:none">
+        <div class="section-label">📌 Закреплённые</div>
+        <div class="records-list" id="pinned-list"></div>
       </div>
       <div class="section-label" id="recent-label">Последние</div>
       <div class="records-list" id="recent-list"></div>
@@ -1668,7 +1767,10 @@
       <span>Добавить</span>
     </button>
     <button class="nav-btn" id="nav-reminders" onclick="showReminders()">
-      <span class="nav-icon-wrap"><span class="nav-icon">⏰</span></span>
+      <span class="nav-icon-wrap">
+        <span class="nav-icon">⏰</span>
+        <span class="nav-badge" id="reminders-badge" style="display:none"></span>
+      </span>
       <span>Напоминания</span>
     </button>
     <button class="nav-btn" id="nav-stats" onclick="showStats()">
@@ -1680,6 +1782,38 @@
 </div>
 
 
+
+<!-- Burger menu -->
+<div class="burger-overlay" id="burger-overlay" onclick="closeBurger(event)">
+  <div class="burger-sheet">
+    <div class="burger-title">Меню</div>
+
+    <button class="burger-item" onclick="closeBurger();toggleTheme()">
+      <div class="burger-item-icon" style="background:rgba(108,99,255,.2)">🌙</div>
+      <div><div id="burger-theme-label">Тёмная тема</div><div class="burger-item-sub">Переключить оформление</div></div>
+    </button>
+
+    <div class="burger-divider"></div>
+
+    <button class="burger-item" onclick="closeBurger();showArchive()">
+      <div class="burger-item-icon" style="background:rgba(255,180,0,.15)">📦</div>
+      <div><div>Архив</div><div class="burger-item-sub">Скрытые заметки</div></div>
+    </button>
+
+    <button class="burger-item" onclick="closeBurger();exportRecords()">
+      <div class="burger-item-icon" style="background:rgba(99,200,99,.15)">📥</div>
+      <div><div>Экспорт CSV</div><div class="burger-item-sub">Отправить в Telegram</div></div>
+    </button>
+
+    <div class="burger-divider"></div>
+
+    <button class="burger-item" onclick="closeBurger();showOnboarding()">
+      <div class="burger-item-icon" style="background:rgba(99,180,255,.15)">❓</div>
+      <div><div>Обучение</div><div class="burger-item-sub">Показать с начала</div></div>
+    </button>
+
+  </div>
+</div>
 
 <!-- Create category overlay -->
 <div class="create-cat-overlay" id="create-cat-overlay">
@@ -2035,6 +2169,25 @@ async function loadHome() {
     document.getElementById('home-sub').textContent =
       total ? `${total} заметок в коллекции` : 'Пока нет заметок';
 
+    // Pinned records
+    try {
+      const pinnedData = await GET('/api/records?pinned=true&limit=20');
+      const pinned = (pinnedData.records || []).filter(r => r.is_pinned);
+      const wrap = document.getElementById('pinned-section-wrap');
+      const list = document.getElementById('pinned-list');
+      if (pinned.length && wrap && list) {
+        wrap.style.display = 'block';
+        list.innerHTML = '';
+        pinned.forEach((r, i) => {
+          const el = recordCard(r);
+          el.style.animationDelay = i * 40 + 'ms';
+          list.appendChild(el);
+        });
+      } else if (wrap) {
+        wrap.style.display = 'none';
+      }
+    } catch(e) {}
+
     // Check archive count
     try {
       const archData = await GET('/api/records?include_archived=true&limit=200');
@@ -2126,6 +2279,7 @@ function recordCard(record) {
   const archBadge = record.is_archived ? '<span style="font-size:11px;color:#ffb400">📦 Архив · </span>' : '';
 
   let inner = '';
+  if (record.is_pinned) inner += '<div class="pin-badge">📌</div>';
   if (record.photo) {
     inner += `<img class="record-thumb" src="${record.photo}" alt="">`;
   }
@@ -2194,9 +2348,12 @@ function renderDetail(record) {
   // Archive / duplicate row
   const archLabel = record.is_archived ? '📤 Разархивировать' : '📦 В архив';
   const archFn    = record.is_archived ? `unarchiveRecord('${record.id}')` : `archiveRecord('${record.id}')`;
+  const pinLabel  = record.is_pinned   ? '📌 Откреп.' : '📌 Закрепить';
+  const pinFn     = record.is_pinned   ? `unpinRecord('${record.id}')` : `pinRecord('${record.id}')`;
   html += `<div style="display:flex;gap:8px;margin-bottom:8px">
+    <button class="btn btn-ghost" style="flex:1;font-size:13px" data-action="pin" data-id="${record.id}" data-pinned="${record.is_pinned}">${pinLabel}</button>
     <button class="btn btn-ghost" style="flex:1;font-size:13px" onclick="${archFn}">${archLabel}</button>
-    <button class="btn btn-ghost" style="flex:1;font-size:13px" onclick="duplicateRecord('${record.id}')">📋 Копия</button>
+    <button class="btn btn-ghost" style="flex:1;font-size:13px" onclick="duplicateRecord('${record.id}')">📋</button>
   </div>`;
 
   html += `<div class="detail-actions">
@@ -2216,7 +2373,10 @@ function renderDetail(record) {
     const id = btn.dataset.id;
     if (btn.dataset.action === 'delete') confirmDelete(id);
     if (btn.dataset.action === 'edit')   editRecord(id);
-    // Remove listener after first use to avoid stacking
+    if (btn.dataset.action === 'pin') {
+      const pinned = btn.dataset.pinned === 'true';
+      if (pinned) unpinRecord(id); else pinRecord(id);
+    }
     document.getElementById('detail-content').removeEventListener('click', handler);
   });
 
@@ -3439,10 +3599,63 @@ function updateOnbSlide() {
   }, {passive:true});
 })();
 
+// ──────────────────── Burger menu ────────────────────
+function openBurger() {
+  const ov = document.getElementById('burger-overlay');
+  ov.classList.add('show');
+  // Sync theme label
+  document.getElementById('burger-theme-label').textContent = _isDark ? 'Светлая тема' : 'Тёмная тема';
+  // Sync theme icon
+  const icon = document.querySelector('#burger-overlay .burger-item:first-of-type .burger-item-icon');
+  if (icon) icon.textContent = _isDark ? '☀️' : '🌙';
+}
+function closeBurger(e) {
+  if (e && e.target !== document.getElementById('burger-overlay')) return;
+  document.getElementById('burger-overlay').classList.remove('show');
+}
+
+// ──────────────────── Pin / Unpin ────────────────────
+async function pinRecord(id) {
+  try {
+    await POST('/api/records/' + id + '/pin', {});
+    showToast('📌 Закреплено!');
+    if (tg) tg.HapticFeedback?.impactOccurred('medium');
+    const rec = await GET('/api/records/' + id);
+    renderDetail(rec);
+  } catch(e) { showToast('Ошибка'); }
+}
+async function unpinRecord(id) {
+  try {
+    await POST('/api/records/' + id + '/unpin', {});
+    showToast('📌 Откреплено');
+    const rec = await GET('/api/records/' + id);
+    renderDetail(rec);
+  } catch(e) { showToast('Ошибка'); }
+}
+
+// ──────────────────── Reminders badge ────────────────────
+async function updateRemindersBadge() {
+  try {
+    const { reminders } = await GET('/api/reminders');
+    const count = (reminders || []).length;
+    const badge = document.getElementById('reminders-badge');
+    if (!badge) return;
+    if (count > 0) {
+      badge.textContent = count > 9 ? '9+' : count;
+      badge.style.display = 'flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  } catch(e) {}
+}
+
 // ──────────────────── Boot ────────────────────
 initCatPicker();
 preloadTags();
 loadHome();
+updateRemindersBadge();
+// Refresh badge every 60s
+setInterval(updateRemindersBadge, 60000);
 
 // Show onboarding only on first visit
 try {

@@ -211,12 +211,14 @@ async def list_records(
     sort:             str           = Query("date"),
     tag_filter:       Optional[str] = Query(None),
     include_archived: bool          = Query(False),
+    pinned:           bool          = Query(False),
 ):
     user_id = get_user_id(request)
     records = await storage.get_records(
         user_id=user_id, category=category, query=q,
         limit=limit, offset=offset, sort=sort,
         tag_filter=tag_filter, include_archived=include_archived,
+        pinned_only=pinned,
     )
     return {"records": records, "count": len(records)}
 
@@ -312,6 +314,24 @@ async def get_tags(request: Request):
     tags = await storage.get_all_tags(user_id)
     return {"tags": tags}
 
+
+@app.post("/api/records/{record_id}/pin")
+async def pin_record(record_id: str, request: Request):
+    user_id = get_user_id(request)
+    record  = await storage.get_record(record_id)
+    if not record or record.get("user_id") != user_id:
+        raise HTTPException(status_code=404, detail="Not found")
+    await storage.update_record(record_id, {'is_pinned': True})
+    return {"ok": True}
+
+@app.post("/api/records/{record_id}/unpin")
+async def unpin_record(record_id: str, request: Request):
+    user_id = get_user_id(request)
+    record  = await storage.get_record(record_id)
+    if not record or record.get("user_id") != user_id:
+        raise HTTPException(status_code=404, detail="Not found")
+    await storage.update_record(record_id, {'is_pinned': False})
+    return {"ok": True}
 
 @app.post("/api/records/{record_id}/archive")
 async def archive_record(record_id: str, request: Request):

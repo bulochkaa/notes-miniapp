@@ -20,13 +20,15 @@ async def add_record(record: dict) -> str:
 
 async def get_records(user_id=None, category=None, query=None,
                       limit=100, offset=0, include_archived=False,
-                      sort='date', tag_filter=None):
+                      sort='date', tag_filter=None, pinned_only=False):
     async with AsyncSessionLocal() as s:
         stmt = select(Record)
         if user_id  is not None: stmt = stmt.where(Record.user_id == user_id)
         if category: stmt = stmt.where(Record.category == category)
         if not include_archived:
             stmt = stmt.where((Record.is_archived == False) | (Record.is_archived == None))
+        if pinned_only:
+            stmt = stmt.where(Record.is_pinned == True)
         if query:
             q = f"%{query.lower()}%"
             stmt = stmt.where(or_(func.lower(Record.title).like(q), func.lower(Record.description).like(q)))
@@ -34,11 +36,11 @@ async def get_records(user_id=None, category=None, query=None,
             stmt = stmt.where(Record.tags.contains([tag_filter]))
         # Sorting
         if sort == 'rating':
-            stmt = stmt.order_by(Record.rating.desc(), Record.created_at.desc())
+            stmt = stmt.order_by(Record.is_pinned.desc(), Record.rating.desc(), Record.created_at.desc())
         elif sort == 'title':
-            stmt = stmt.order_by(Record.title)
+            stmt = stmt.order_by(Record.is_pinned.desc(), Record.title)
         else:
-            stmt = stmt.order_by(Record.created_at.desc())
+            stmt = stmt.order_by(Record.is_pinned.desc(), Record.created_at.desc())
         stmt = stmt.offset(offset).limit(limit)
         return [_r(r) for r in (await s.execute(stmt)).scalars().all()]
 
@@ -93,6 +95,7 @@ def _r(r: Record) -> dict:
             "description":r.description,"link":r.link,"photo":r.photo,
             "rating":r.rating,"tags":r.tags or [],"message_id":r.message_id,
             "is_archived": bool(r.is_archived),
+            "is_pinned":   bool(r.is_pinned),
             "created_at":r.created_at.isoformat() if r.created_at else ""}
 
 # ── Reminders ────────────────────────────────────────────────────────
