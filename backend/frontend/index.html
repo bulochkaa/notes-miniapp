@@ -3801,12 +3801,12 @@ function updateOnbSlide() {
 
 // ──────────────────── Templates ────────────────────
 const TEMPLATES = {
-  '🎬 Фильмы': { icon:'🎬', name:'Фильм', fields: { title:'Название фильма', desc:'Жанр: \\nРежиссёр: \\nГод: \\nВпечатление: ' } },
-  '🍳 Рецепты': { icon:'🍳', name:'Рецепт', fields: { title:'Название блюда', desc:'Ингредиенты:\\n- \\n\\nПриготовление:\\n1. ' } },
-  '📍 Интересные места': { icon:'📍', name:'Место', fields: { title:'Название места', desc:'Адрес: \\nЧем понравилось: ' } },
-  '🎵 Музыка': { icon:'🎵', name:'Трек', fields: { title:'Исполнитель — Название', desc:'Жанр: \\nНастроение: ' } },
-  '🎁 Подарки': { icon:'🎁', name:'Подарок', fields: { title:'Кому:', desc:'Идея:\\nБюджет: \\nПовод: ' } },
-  '👕 Одежда': { icon:'👕', name:'Вещь', fields: { title:'Описание вещи', desc:'Размер: \\nГде купить: \\nЦена: ' } },
+  '🎬 Фильмы': { icon:'🎬', name:'Фильм', title:'Название фильма', desc:'Жанр: \nРежиссёр: \nГод: \nВпечатление: ' },
+  '🍳 Рецепты': { icon:'🍳', name:'Рецепт', title:'Название блюда', desc:'Ингредиенты:\n- \n\nПриготовление:\n1. ' },
+  '📍 Интересные места': { icon:'📍', name:'Место', title:'Название места', desc:'Адрес: \nЧем понравилось: \nКогда был: ' },
+  '🎵 Музыка': { icon:'🎵', name:'Трек', title:'Исполнитель — Название', desc:'Жанр: \nНастроение: \nПохоже на: ' },
+  '🎁 Подарки': { icon:'🎁', name:'Подарок', title:'Кому:', desc:'Идея: \nБюджет: \nПовод: ' },
+  '👕 Одежда': { icon:'👕', name:'Вещь', title:'Описание вещи', desc:'Размер: \nЦвет: \nГде купить: \nЦена: ' },
 };
 
 function showTemplatesForCat(cat) {
@@ -3831,8 +3831,8 @@ function showTemplatesForCat(cat) {
 function applyTemplate(cat) {
   const tmpl = TEMPLATES[cat];
   if (!tmpl) return;
-  document.getElementById('form-title-in').value = tmpl.fields.title;
-  document.getElementById('form-desc').value     = tmpl.fields.desc;
+  document.getElementById('form-title-in').value = tmpl.title;
+  document.getElementById('form-desc').value     = tmpl.desc.replace(/\\n/g, '\n');
   document.getElementById('templates-group').style.display = 'none';
   document.getElementById('form-title-in').focus();
   if (tg) tg.HapticFeedback?.impactOccurred('light');
