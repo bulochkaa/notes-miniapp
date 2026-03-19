@@ -2724,7 +2724,26 @@ document.getElementById('form-submit').onclick = async () => {
         photo: state._formPhoto || null,
         rating: state._formRating, tags,
       });
-      showToast('✅ Запись обновлена!'); haptic('success');
+      // Save reminder if set during edit
+      if (state._reminderDate) {
+        try {
+          await POST('/api/reminders', {
+            record_id:   state.editRecord.id,
+            remind_date: state._reminderDate.toISOString().slice(0, 10),
+            remind_time: state._reminderTime  || '09:00',
+            repeat_type: state._reminderRepeat || null,
+            emoji:       state._reminderEmoji  || '🔔',
+          });
+          const d = state._reminderDate;
+          const months = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+          showToast('✅ Обновлено! ⏰ Напомню ' + d.getDate() + ' ' + months[d.getMonth()]);
+        } catch(e) {
+          showToast('✅ Запись обновлена!');
+        }
+      } else {
+        showToast('✅ Запись обновлена!');
+      }
+      haptic('success');
     } else {
       await POST('/api/records', {
         category: state._formCat, title, description: desc,
